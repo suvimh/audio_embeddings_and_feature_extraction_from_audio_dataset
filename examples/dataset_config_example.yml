@@ -1,0 +1,17 @@
+# Simple Dataset Configuration (YAML)
+# =================================
+# This is the YAML version of dataset_config_example.py
+# Customize for your dataset and save as dataset_config.yml
+
+name: "simple_audio_dataset"
+root_dir: "/path/to/dataset"
+level_names:
+  - speaker
+participant_level: 0
+sample_rate: 16000
+frame_duration: 3.0
+overlap_percentage: 0.25
+enable_silence_trimming: true
+silence_threshold_db: -40.0
+silence_min_duration_ms: 500.0
+normalization_mode: "peak"
