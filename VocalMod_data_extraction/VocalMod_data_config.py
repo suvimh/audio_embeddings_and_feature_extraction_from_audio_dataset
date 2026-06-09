@@ -4,9 +4,11 @@
 
 from scripts.config.dataset_config import DatasetConfig
 
+DATA_INPUT_DIR = "/home/suvihaara/Documents/PhD/DATA/VTE/VOICE_DATA_CLEAN/"
+
 
 def vte_dataset_config(
-    root_dir: str,
+    root_dir: str = DATA_INPUT_DIR,
     frame_duration: float = 3.0,
     sample_rate: int = 16000,
     overlap_percentage: float = 0.25,
@@ -39,7 +41,7 @@ def vte_dataset_config(
     take        : recording take number
     """
     return DatasetConfig(
-        name="vte_dataset",
+        name="vocalmod_vte_dataset",
         root_dir=root_dir,
         # Fallback schema + union of all column names across subgroups
         level_names=["experience", "singer", "phonation", "condition", "scale", "take"],

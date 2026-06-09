@@ -18,7 +18,7 @@ from scripts.utils import FeatureExtractorConfig, extract_dataset_features
 # ---------------------------------------------------------------------------
 # Available feature sets (most useful for your task)
 # ---------------------------------------------------------------------------
-# opensmile.FeatureSet.ComParE_2013   : 65 / 65 / 6373 features — full paralinguistic set
+# opensmile.FeatureSet.ComParE_2016   : 65 / 65 / 6373 features — full paralinguistic set
 # opensmile.FeatureSet.eGeMAPSv02     : 25 / - / 88 features  — compact, interpretable
 # opensmile.FeatureSet.GeMAPSv01b     : 18 / - / 62 features  — minimal, fast
 
@@ -34,14 +34,14 @@ def make_opensmile_extractor(
     Parameters
     ----------
     feature_set   : which opensmile feature set to use.
-                    ComParE_2013 (6373d) is the default — broadest coverage.
+                    ComParE_2016 (6373d) is the default — broadest coverage.
                     eGeMAPSv02 (88d) is a good compact alternative.
     feature_level : Functionals = one vector per clip (statistics over time).
                     This is what you want for frame-level classification.
     sample_rate   : must match what load_and_frame_audio resamples to.
 
     Output dim:
-        ComParE_2013 : 6373
+        ComParE_2016 : 6373
         eGeMAPSv02   : 88
         GeMAPSv01b   : 62
     """

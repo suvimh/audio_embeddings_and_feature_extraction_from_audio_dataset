@@ -63,10 +63,16 @@ def make_extractor(
         return make_whisper_extractor(model_name=model_name, device=device)
 
     elif name_lower == "opensmile":
+        import opensmile
         from scripts.feature_sets.extract_opensmile import make_opensmile_extractor
 
-        feature_set = extractor_params.get("feature_set", "ComParE_2016")
-        feature_level = extractor_params.get("feature_level", "Functionals")
+        feature_set_str = extractor_params.get("feature_set", "ComParE_2016")
+        feature_level_str = extractor_params.get("feature_level", "Functionals")
+
+        # Convert string parameters to enums
+        feature_set = getattr(opensmile.FeatureSet, feature_set_str)
+        feature_level = getattr(opensmile.FeatureLevel, feature_level_str)
+
         return make_opensmile_extractor(
             feature_set=feature_set,
             feature_level=feature_level,

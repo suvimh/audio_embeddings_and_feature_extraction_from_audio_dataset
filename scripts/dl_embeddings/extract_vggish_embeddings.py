@@ -5,8 +5,15 @@ from scripts.utils import (
 )
 
 
-def make_vggish_extractor() -> FeatureExtractorConfig:
-    """Load VGGish from TF Hub and return a FeatureExtractorConfig."""
+def make_vggish_extractor(sample_rate: int = 16000) -> FeatureExtractorConfig:
+    """
+    Load VGGish from TF Hub and return a FeatureExtractorConfig.
+    
+    Parameters
+    ----------
+    sample_rate : int, optional
+        Ignored (VGGish internally resamples to 16kHz). Included for API consistency.
+    """
     import tensorflow_hub as hub
 
     model = hub.load("https://tfhub.dev/google/vggish/1")

@@ -1,228 +1,108 @@
-# Visualisation libraries
+import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-import numpy as np
-from sklearn.manifold import TSNE
-from sklearn.decomposition import PCA
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis as LDA
-import umap
 
 
-def lda_visualisation(x, y, data, palette="viridis", data_type="VGGish Features"):
-    x_flat = x.reshape(x.shape[0], -1)
-    lda = LDA(n_components=2)
-    embedding = lda.fit_transform(x_flat, y)
+def prepare_and_plot_lda(
+    df,
+    embedding_col="embedding",
+    class_col="singer",  # Column to use for LDA clustering
+    mode="2d",  # "2d" or "3d"
+    palette="viridis",
+    data_type="Embedding Features",
+    filters=None,
+    plot_label_col=None,  # New: Column to use for coloring the plot, defaults to class_col
+):
+    """
+    Prepares embeddings from a dataframe and visualises using LDA.
 
-    plt.figure(figsize=(10, 6))
-    sns.scatterplot(
-        x=embedding[:, 0], y=embedding[:, 1], hue=data["Class"], palette=palette
-    )
-    plt.title(f"LDA Projection of {data_type}")
-    plt.show()
+    Parameters:
+    - df: pandas DataFrame containing embeddings and metadata
+    - embedding_col: name of the column containing embeddings (as lists)
+    - class_col: column to use as class labels for LDA dimensionality reduction
+    - mode: "2d" or "3d" for LDA projection
+    - palette: seaborn colour palette
+    - data_type: descriptive name for title
+    - filters: dict of {column_name: list_of_values} to filter dataframe
+    - plot_label_col: column to use for coloring the scatter plot. If None, uses class_col.
+    """
 
+    # Copy df to avoid modifying original
+    data = df.copy()
 
-def pca_visualisation(x, data, palette="viridis", data_type="VGGish Features"):
-    x_flat = x.reshape(x.shape[0], -1)
-    pca = PCA(n_components=2)
-    embedding = pca.fit_transform(x_flat)
+    # Apply filters if any
+    if filters:
+        for col, vals in filters.items():
+            data = data[data[col].isin(vals)]
 
-    plt.figure(figsize=(10, 6))
-    sns.scatterplot(
-        x=embedding[:, 0], y=embedding[:, 1], hue=data["Class"], palette=palette
-    )
-    plt.title(f"PCA Projection of {data_type}")
-    plt.show()
+    if data.shape[0] == 0:
+        print("Warning: No rows left after filtering. Nothing to plot.")
+        return
 
+    # Flatten embeddings
+    X = np.array(data[embedding_col].tolist())
 
-def tsne_visualisation(x, y, encoder, palette="viridis", data_type="VGGish Features"):
-    x_flat = x.reshape(x.shape[0], -1)
-    tsne = TSNE(n_components=2, random_state=42, perplexity=30)
-    x_2d = tsne.fit_transform(x_flat)
+    # 'y_lda' is used for the LDA fitting, based on class_col
+    y_lda = data[class_col].values
+    n_classes = len(np.unique(y_lda))
 
-    # Create a color palette of the right length
-    class_names = encoder.classes_
-    n_classes = len(class_names)
-    colours = sns.color_palette(palette, n_colors=n_classes)
-
-    plt.figure(figsize=(10, 8))
-
-    # Plot each class individually to ensure colors match legend
-    for i, class_name in enumerate(class_names):
-        idx = np.where(y == i)[0]
-        plt.scatter(
-            x_2d[idx, 0], x_2d[idx, 1], color=colours[i], alpha=0.7, label=class_name
+    if n_classes < 2:
+        print(
+            f"Warning: Only one class ({y_lda[0]}) after filtering. LDA cannot be applied."
         )
+        return
 
-    plt.legend(title="Classes", loc="best")
-    plt.title(f"t-SNE Visualization of {data_type}")
-    plt.xlabel("t-SNE 1")
-    plt.ylabel("t-SNE 2")
-    plt.grid(True)
-    plt.tight_layout()
-    plt.show()
-
-
-def umap_visualisation(x, y, encoder, palette="viridis", data_type="Whisper Features"):
-    import umap
-
-    x_flat = x.reshape(x.shape[0], -1)
-    reducer = umap.UMAP(n_components=2, random_state=42)
-    x_2d = reducer.fit_transform(x_flat)
-
-    # Create a color palette of the right length
-    class_names = encoder.classes_
-    n_classes = len(class_names)
-    colors = sns.color_palette(palette, n_colors=n_classes)
-
-    plt.figure(figsize=(10, 8))
-
-    # Plot each class separately to ensure color matches legend
-    for i, class_name in enumerate(class_names):
-        idx = np.where(y == i)[0]
-        plt.scatter(
-            x_2d[idx, 0], x_2d[idx, 1], color=colors[i], alpha=0.7, label=class_name
-        )
-
-    plt.legend(title="Classes", loc="best")
-    plt.title(f"UMAP Visualization of {data_type}")
-    plt.xlabel("UMAP 1")
-    plt.ylabel("UMAP 2")
-    plt.grid(True)
-    plt.tight_layout()
-    plt.show()
-
-
-def pca_visualisation_3d(x, data, palette="viridis", data_type="VGGish Features"):
-    x_flat = x.reshape(x.shape[0], -1)
-    pca = PCA(n_components=3)
-    embedding = pca.fit_transform(x_flat)
-
-    fig = plt.figure(figsize=(10, 8))
-    ax = fig.add_subplot(111, projection="3d")
-
-    # Create a color palette
-    class_names = data["Class"].unique()
-    colours = sns.color_palette(palette, n_colors=len(class_names))
-
-    # Plot each class separately
-    for i, class_name in enumerate(class_names):
-        idx = np.where(data["Class"] == class_name)[0]
-        ax.scatter(
-            embedding[idx, 0],
-            embedding[idx, 1],
-            embedding[idx, 2],
-            color=colours[i],
-            alpha=0.7,
-            label=class_name,
-        )
-
-    ax.set_xlabel("PC1")
-    ax.set_ylabel("PC2")
-    ax.set_zlabel("PC3")
-    ax.set_title(f"3D PCA Projection of {data_type}")
-    ax.legend(title="Classes", loc="best")
-    plt.show()
-
-
-def lda_visualisation_3d(x, y, data, palette="viridis", data_type="VGGish Features"):
-    x_flat = x.reshape(x.shape[0], -1)
-    n_components = min(3, len(np.unique(y)) - 1)
+    # LDA: determine number of components based on data
+    n_components = min(3, n_classes - 1)
     lda = LDA(n_components=n_components)
-    embedding = lda.fit_transform(x_flat, y)
+    embedding = lda.fit_transform(X, y_lda)
 
-    fig = plt.figure(figsize=(10, 8))
-    ax = fig.add_subplot(111, projection="3d")
+    # Determine the column to use for plotting hue/labels
+    plot_hue_source = plot_label_col if plot_label_col is not None else class_col
+    if plot_hue_source not in data.columns:
+        print(f"Error: Plot label column '{plot_hue_source}' not found in DataFrame.")
+        return
 
-    # Create a color palette
-    class_names = data["Class"].unique()
-    colours = sns.color_palette(palette, n_colors=len(class_names))
+    # Prepare data for plotting
+    data_plot = data.copy()
+    data_plot["LD1"] = embedding[:, 0]
+    data_plot["LD2"] = (
+        embedding[:, 1] if n_components >= 2 else np.zeros_like(embedding[:, 0])
+    )
+    data_plot["LD3"] = (
+        embedding[:, 2] if n_components >= 3 else np.zeros_like(embedding[:, 0])
+    )
+    data_plot["Plot_Hue_Label"] = data[plot_hue_source].values
 
-    # Plot each class separately
-    for i, class_name in enumerate(class_names):
-        idx = np.where(data["Class"] == class_name)[0]
-        ax.scatter(
-            embedding[idx, 0],
-            embedding[idx, 1],
-            embedding[idx, 2] if n_components > 2 else np.zeros_like(embedding[idx, 0]),
-            color=colours[i],
-            alpha=0.7,
-            label=class_name,
+    # Plot
+    if mode == "2d" or n_components < 3:
+        plt.figure(figsize=(10, 6))
+        sns.scatterplot(
+            x="LD1", y="LD2", hue="Plot_Hue_Label", data=data_plot, palette=palette
         )
-
-    ax.set_xlabel("LD1")
-    ax.set_ylabel("LD2")
-    if n_components > 2:
+        plt.title(f"LDA Projection of {data_type} (2D)")
+        plt.xlabel("LD1")
+        plt.ylabel("LD2")
+        plt.show()
+    else:
+        fig = plt.figure(figsize=(10, 8))
+        ax = fig.add_subplot(111, projection="3d")
+        hue_class_names = data_plot["Plot_Hue_Label"].unique()
+        colours = sns.color_palette(palette, n_colors=len(hue_class_names))
+        for i, hue_cls in enumerate(hue_class_names):
+            idx = data_plot["Plot_Hue_Label"] == hue_cls
+            ax.scatter(
+                data_plot.loc[idx, "LD1"],
+                data_plot.loc[idx, "LD2"],
+                data_plot.loc[idx, "LD3"],
+                color=colours[i],
+                alpha=0.7,
+                label=hue_cls,
+            )
+        ax.set_xlabel("LD1")
+        ax.set_ylabel("LD2")
         ax.set_zlabel("LD3")
-    ax.set_title(f"3D LDA Projection of {data_type}")
-    ax.legend(title="Classes", loc="best")
-    plt.show()
-
-
-def tsne_visualisation_3d(
-    x, y, encoder, palette="viridis", data_type="Whisper Features"
-):
-    x_flat = x.reshape(x.shape[0], -1)
-    tsne = TSNE(n_components=3, random_state=42, perplexity=30)
-    x_3d = tsne.fit_transform(x_flat)
-
-    # Create a color palette of the right length
-    class_names = encoder.classes_
-    n_classes = len(class_names)
-    colours = sns.color_palette(palette, n_colors=n_classes)
-
-    fig = plt.figure(figsize=(12, 9))
-    ax = fig.add_subplot(111, projection="3d")
-
-    # Plot each class separately
-    for i, class_name in enumerate(class_names):
-        idx = np.where(y == i)[0]
-        ax.scatter(
-            x_3d[idx, 0],
-            x_3d[idx, 1],
-            x_3d[idx, 2],
-            color=colours[i],
-            alpha=0.7,
-            label=class_name,
-        )
-
-    ax.set_xlabel("t-SNE 1")
-    ax.set_ylabel("t-SNE 2")
-    ax.set_zlabel("t-SNE 3")
-    ax.set_title(f"3D t-SNE Visualization of {data_type}")
-    ax.legend(title="Classes", loc="best")
-    plt.show()
-
-
-def umap_visualisation_3d(
-    x, y, encoder, palette="viridis", data_type="Whisper Features"
-):
-    x_flat = x.reshape(x.shape[0], -1)
-    reducer = umap.UMAP(n_components=3, random_state=42)
-    x_3d = reducer.fit_transform(x_flat)
-
-    # Create a color palette of the right length
-    class_names = encoder.classes_
-    n_classes = len(class_names)
-    colours = sns.color_palette(palette, n_colors=n_classes)
-
-    fig = plt.figure(figsize=(12, 9))
-    ax = fig.add_subplot(111, projection="3d")
-
-    # Plot each class separately
-    for i, class_name in enumerate(class_names):
-        idx = np.where(y == i)[0]
-        ax.scatter(
-            x_3d[idx, 0],
-            x_3d[idx, 1],
-            x_3d[idx, 2],
-            color=colours[i],
-            alpha=0.7,
-            label=class_name,
-        )
-
-    ax.set_xlabel("UMAP 1")
-    ax.set_ylabel("UMAP 2")
-    ax.set_zlabel("UMAP 3")
-    ax.set_title(f"3D UMAP Visualization of {data_type}")
-    ax.legend(title="Classes", loc="best")
-    plt.show()
+        ax.set_title(f"LDA Projection of {data_type} (3D)")
+        ax.legend(title="Classes", loc="best")
+        plt.show()

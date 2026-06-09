@@ -259,8 +259,13 @@ def _checkpoint_path(checkpoint_dir: Path, out_stem: str) -> Path:
     return checkpoint_dir / f"{out_stem}.checkpoint.jsonl"
 
 
-def _load_checkpoint(checkpoint_dir: Path, out_stem: str) -> set[str]:
-    """Return set of already-processed file paths from checkpoint file."""
+def _load_checkpoint(checkpoint_dir: Path, out_stem: str, extractor_name: str = None) -> set[str]:
+    """
+    Return set of already-processed file paths from checkpoint file.
+    
+    If extractor_name is provided, only returns files processed by that specific extractor.
+    This allows running different extractors on the same files without conflicts.
+    """
     cp = _checkpoint_path(checkpoint_dir, out_stem)
     if not cp.exists():
         return set()
@@ -269,15 +274,31 @@ def _load_checkpoint(checkpoint_dir: Path, out_stem: str) -> set[str]:
         for line in f:
             line = line.strip()
             if line:
-                completed.add(json.loads(line)["filepath"])
-    print(f"[INFO] Checkpoint found: {len(completed)} files already processed.")
+                entry = json.loads(line)
+                filepath = entry.get("filepath", "")
+                entry_extractor = entry.get("extractor", None)
+                
+                # If extractor_name is specified, only include this extractor's files
+                # If not specified (backwards compatibility), include all
+                if extractor_name is None or entry_extractor == extractor_name:
+                    completed.add(filepath)
+    
+    print(f"[INFO] Checkpoint found: {len(completed)} files already processed for {extractor_name or 'any extractor'}.")
     return completed
 
 
-def _append_checkpoint(checkpoint_dir: Path, out_stem: str, filepath: str) -> None:
-    """Record a completed filepath in the checkpoint file."""
+def _append_checkpoint(checkpoint_dir: Path, out_stem: str, filepath: str, extractor_name: str = None) -> None:
+    """
+    Record a completed filepath in the checkpoint file.
+    
+    If extractor_name is provided, records which extractor processed this file.
+    This allows resuming different extractors independently.
+    """
     with open(_checkpoint_path(checkpoint_dir, out_stem), "a") as f:
-        f.write(json.dumps({"filepath": filepath}) + "\n")
+        entry = {"filepath": filepath}
+        if extractor_name:
+            entry["extractor"] = extractor_name
+        f.write(json.dumps(entry) + "\n")
 
 
 def _append_rows_to_hdf5(
@@ -462,9 +483,10 @@ def extract_dataset_features(
 
     Crash-safe strategy:
       - Rows are appended to a single HDF5 file (on Drive) every file
-      - A checkpoint .jsonl tracks which files are fully done
+      - A checkpoint .jsonl tracks which files are fully done PER EXTRACTOR
       - On completion, HDF5 is converted to final Parquet and HDF5 + checkpoint are cleaned up
       - If interrupted, re-running resumes automatically from the checkpoint
+      - Different extractors can be run independently on the same dataset
 
     Parameters
     ----------
@@ -490,7 +512,7 @@ def extract_dataset_features(
         return load_parquet(out_file)
 
     # Resume from checkpoint if available
-    completed_paths = _load_checkpoint(checkpoint_dir, out_stem)
+    completed_paths = _load_checkpoint(checkpoint_dir, out_stem, extractor_name=extractor_config.name)
 
     root_dir = Path(dataset_config.root_dir)
     all_files = collect_audio_files(root_dir, dataset_config)
@@ -551,7 +573,7 @@ def extract_dataset_features(
                             "reason": "Failed to load and frame audio",
                         }
                     )
-                    _append_checkpoint(checkpoint_dir, out_stem, str(file_path))
+                    _append_checkpoint(checkpoint_dir, out_stem, str(file_path), extractor_name=extractor_config.name)
                     pbar.update(1)
                     pbar.set_postfix(
                         {"frames": len(batch_rows), "file": file_path.name[:35]}
@@ -598,7 +620,7 @@ def extract_dataset_features(
                         )
 
                 # Mark file as done in checkpoint
-                _append_checkpoint(checkpoint_dir, out_stem, str(file_path))
+                _append_checkpoint(checkpoint_dir, out_stem, str(file_path), extractor_name=extractor_config.name)
                 pbar.update(1)
                 pbar.set_postfix(
                     {
@@ -622,7 +644,7 @@ def extract_dataset_features(
                     }
                 )
                 print(f"[WARN] Error processing {file_path}: {e}")
-                _append_checkpoint(checkpoint_dir, out_stem, str(file_path))
+                _append_checkpoint(checkpoint_dir, out_stem, str(file_path), extractor_name=extractor_config.name)
                 pbar.update(1)
 
     # Flush remaining rows

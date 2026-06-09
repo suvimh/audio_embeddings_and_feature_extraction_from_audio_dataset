@@ -13,13 +13,13 @@ A modular, production-ready Python framework for extracting deep learning embedd
 - 🔧 **User-Friendly CLI**: Python or YAML config files with validation utilities
 - 📈 **Production-Ready**: Comprehensive error handling, type hints, extensive documentation
 
-## Quick Start (5 Minutes)
+## Quick Start
 
 ### 1. Installation
 
 ```bash
 # Clone repository
-git clone <repo_url>
+git clone https://github.com/suvimh/audio_embeddings_and_feature_extraction_from_audio_dataset.git
 cd audio_embeddings_and_feature_extraction_from_audio_dataset
 
 # Create conda environment
@@ -43,7 +43,7 @@ from scripts.config.dataset_config import DatasetConfig
 dataset = DatasetConfig(
     name="my_audio_dataset",
     root_dir="/path/to/audio/data",
-    level_names=["speaker", "condition"],
+    level_names=["speaker", "condition"], # these need to be in the correct level order
     participant_level=0,
     sample_rate=16000,
     frame_duration=3.0,
@@ -153,7 +153,7 @@ from scripts.config.dataset_config import DatasetConfig
 dataset = DatasetConfig(
     name="voice_quality_vte",
     root_dir="/data/VTE",
-    level_names=["experience", "speaker", "phonation", "condition", "scale", "take"],
+    level_names=["experience", "speaker", "phonation", "condition", "scale", "take"], # these need to be in the correct level order
     participant_level=1,
     subgroup_configs={
         "professional": ["experience", "speaker", "phonation", "condition", "scale", "take"],
@@ -218,7 +218,7 @@ python -m scripts list-extractors
 | **Whisper**   | DL Embedding      | 384–1280 | GPU     | Speech encoder (OpenAI)                         |
 | **OpenSMILE** | Acoustic Features | 62–6373  | CPU     | Traditional acoustic features (paralinguistics) |
 
-### 4. Command-Line Interface
+### 4a. Command-Line Interface
 
 ```bash
 # Show help
@@ -238,6 +238,255 @@ python -m scripts extract \
 
 # List available extractors
 python -m scripts list-extractors
+```
+
+### 4b. Using from Jupyter Notebooks
+
+If you prefer working in a Jupyter notebook instead of the command line, you can use the pipeline directly in Python:
+
+#### Setup
+
+```python
+# Install in your notebook environment (run once)
+# !pip install -r requirements.txt
+
+from scripts.config.dataset_config import DatasetConfig
+from scripts.config.extraction_config import ExtractionConfig
+from scripts.run_extraction import run_extraction
+import pandas as pd
+import json
+from pathlib import Path
+```
+
+#### Define Your Dataset Configuration
+
+```python
+# Define dataset configuration directly in notebook
+dataset = DatasetConfig(
+    name="my_audio_dataset",
+    root_dir="/path/to/audio/data",
+    level_names=["speaker", "condition"], # these need to be in the correct level order
+    participant_level=0,
+    sample_rate=16000,
+    frame_duration=3.0,
+    overlap_percentage=0.25,
+    enable_silence_trimming=True,
+    silence_threshold_db=-40.0,
+    normalization_mode="peak",
+)
+
+# Validate dataset config
+print(f"Dataset: {dataset.name}")
+print(f"Root directory: {dataset.root_dir}")
+print(f"Levels: {dataset.level_names}")
+```
+
+#### Define Your Extraction Configuration
+
+```python
+# Define extraction configuration
+extraction = ExtractionConfig(
+    extractors=["vggish", "clap", "whisper"],
+    output_dir="/path/to/output",
+    window_lengths=[3.0, 5.0],
+    extractor_params={
+        "clap": {"version": "2023"},
+        "whisper": {"model_name": "openai/whisper-base"},
+    },
+    batch_size="auto",
+    num_workers=4,
+)
+
+# View configuration
+print(f"Extractors: {extraction.extractors}")
+print(f"Output directory: {extraction.output_dir}")
+print(f"Window lengths: {extraction.window_lengths}")
+```
+
+#### Validate Configurations
+
+```python
+# Validate both configurations before running
+from scripts.validate_config import validate_config
+
+try:
+    validate_config(dataset, extraction)
+    print("✓ Configurations are valid!")
+except ValueError as e:
+    print(f"✗ Configuration error: {e}")
+```
+
+#### Run Extraction
+
+**Option 1: Pass file paths (if you have config files)**
+
+```python
+from scripts.run_extraction import run_extraction
+
+# Run extraction using config file paths
+run_extraction(
+    dataset_config_path="configs/my_dataset.py",
+    extraction_config_path="configs/my_extraction.py",
+    log_file="extraction_run.jsonl",
+)
+
+print(f"✓ Extraction complete!")
+```
+
+**Option 2: Save configs and then extract (if you defined them in notebook)**
+
+```python
+from scripts.run_extraction import run_extraction
+
+# Save your programmatically-created configs to files
+dataset.save_yaml("my_dataset_config.yml")
+extraction.save_yaml("my_extraction_config.yml")
+
+# Run extraction using the saved files
+run_extraction(
+    dataset_config_path="my_dataset_config.yml",
+    extraction_config_path="my_extraction_config.yml",
+    log_file="extraction_run.jsonl",
+)
+
+print(f"✓ Extraction complete!")
+```
+
+#### Load and Explore Results
+
+```python
+# Load extraction results
+output_dir = Path(extraction.output_dir)
+
+# List all output files
+output_files = list(output_dir.glob("*.parquet"))
+print("Generated output files:")
+for f in output_files:
+    print(f"  - {f.name}")
+
+# Load a specific embedding
+df_vggish = pd.read_parquet(output_dir / "vggish_window_3s.parquet")
+
+print(f"\nVGGish embeddings shape: {df_vggish.shape}")
+print(f"Columns: {list(df_vggish.columns)}")
+print(f"\nFirst few rows:")
+df_vggish.head()
+```
+
+#### Access Embeddings
+
+```python
+# Get numpy arrays of embeddings
+embeddings = df_vggish["embedding"].values
+print(f"Number of frames: {len(embeddings)}")
+print(f"Embedding dimension: {embeddings[0].shape}")
+
+# Example: Compute embedding statistics
+import numpy as np
+
+embedding_matrix = np.array([e for e in embeddings])
+print(f"\nEmbedding statistics:")
+print(f"Mean: {embedding_matrix.mean(axis=0)[:5]}...")  # First 5 dims
+print(f"Std: {embedding_matrix.std(axis=0)[:5]}...")
+```
+
+#### Parse Logs and Monitor Progress
+
+```python
+# Read JSON-lines log file
+logs = []
+with open(log_file, 'r') as f:
+    for line in f:
+        logs.append(json.loads(line))
+
+# Convert to dataframe for easier analysis
+logs_df = pd.DataFrame(logs)
+
+# View all INFO level messages
+info_logs = logs_df[logs_df['level'] == 'INFO']
+print(info_logs[['timestamp', 'stage', 'message']])
+
+# Extract completion statistics
+completion_logs = logs_df[logs_df['stage'] == 'extraction_complete']
+print("\nExtraction Summary:")
+for _, log in completion_logs.iterrows():
+    print(f"{log['extractor']} @ {log['window_length']}s:")
+    print(f"  Files: {log['files_processed']}")
+    print(f"  Frames: {log['frames_processed']}")
+    print(f"  Errors: {log['errors']}")
+    print(f"  Warnings: {log['warnings']}")
+```
+
+#### Check Resource Usage
+
+```python
+# View resource checkpoints
+resource_logs = logs_df[logs_df['stage'] == 'resource_checkpoint']
+print("Resource Usage Over Time:")
+print(resource_logs[['timestamp', 'ram_used_percent', 'gpu_memory_used_mb']])
+```
+
+#### Save Configuration as YAML (for CLI use later)
+
+```python
+# Convert configs to YAML for reproducibility
+dataset.save_yaml("dataset_config_generated.yml")
+extraction.save_yaml("extraction_config_generated.yml")
+
+print("Saved YAML configs:")
+print("  - dataset_config_generated.yml")
+print("  - extraction_config_generated.yml")
+
+# Later, you can load these from CLI:
+# python -m scripts extract \
+#   --dataset-config dataset_config_generated.yml \
+#   --extraction-config extraction_config_generated.yml
+```
+
+#### Complete Notebook Example
+
+```python
+# Complete workflow in one cell
+from pathlib import Path
+from scripts.config.dataset_config import DatasetConfig
+from scripts.config.extraction_config import ExtractionConfig
+from scripts.run_extraction import run_extraction
+from scripts.validate_config import validate_config
+import pandas as pd
+import json
+
+# Configure
+dataset = DatasetConfig(
+    name="my_data",
+    root_dir="/tmp/audio",
+    level_names=["speaker"], # these need to be in the correct level order
+    participant_level=0,
+)
+
+extraction = ExtractionConfig(
+    extractors=["vggish"],
+    output_dir="/tmp/output",
+    window_lengths=[3.0],
+)
+
+# Validate
+validate_config(dataset, extraction)
+
+# Save configs to files (required by run_extraction)
+dataset.save_yaml("dataset_config.yml")
+extraction.save_yaml("extraction_config.yml")
+
+# Extract using file paths
+run_extraction(
+    dataset_config_path="dataset_config.yml",
+    extraction_config_path="extraction_config.yml",
+    log_file="run.jsonl"
+)
+
+# Load results
+df = pd.read_parquet(Path(extraction.output_dir) / "vggish_window_3s.parquet")
+print(f"Processed {len(df)} frames")
+print(f"Columns: {list(df.columns)}")
 ```
 
 ### 5. Output Format
@@ -355,7 +604,7 @@ from scripts.config.dataset_config import DatasetConfig
 config = DatasetConfig(
     name="my_data",
     root_dir="/tmp/audio",
-    level_names=["speaker"],
+    level_names=["speaker"], # these need to be in the correct level order
     participant_level=0,
 )
 EOF
@@ -425,56 +674,6 @@ dataset_config.py + extraction_config.py
 
 ---
 
-## Troubleshooting
-
-### Q: "Out of Memory" error
-
-**A:** Reduce `batch_size` or enable `gpu_cache_cleanup`:
-
-```python
-ExtractionConfig(batch_size=5, gpu_cache_cleanup=True)
-```
-
-### Q: Some files fail to extract
-
-**A:** Check logs for details:
-
-```bash
-tail -f extraction_TIMESTAMP.jsonl | jq 'select(.level=="WARNING")'
-```
-
-Non-fatal file errors don't stop the pipeline; see summary at end.
-
-### Q: Very slow extraction
-
-**A:** Check resource usage:
-
-```bash
-cat extraction_TIMESTAMP.jsonl | jq 'select(.stage=="resource_checkpoint")'
-```
-
-- High CPU but low GPU usage → GPU bottleneck; use smaller models
-- High memory usage → Reduce batch_size
-- Low GPU utilization → Increase num_workers for I/O
-
-### Q: How to use YAML instead of Python configs?
-
-**A:** Convert using Python API:
-
-```python
-from scripts.config.dataset_config import DatasetConfig
-config = DatasetConfig.load_yaml("config.yml")
-config.save_yaml("output.yml")
-```
-
-Or use CLI directly on YAML files:
-
-```bash
-python -m scripts extract --dataset-config dataset.yml --extraction-config extraction.yml
-```
-
----
-
 ## Contributing
 
 To add a new extractor:
@@ -491,32 +690,4 @@ See [DEVELOPMENT.md](DEVELOPMENT.md) for full details.
 
 ## Citation
 
-If you use this pipeline in research, please cite:
-
-```bibtex
-@software{audio_extraction_2026,
-  title={Audio Embeddings and Feature Extraction Pipeline},
-  author={[Your Name]},
-  year={2026},
-  url={<repo_url>},
-}
-```
-
----
-
-## License
-
-[Your License Here]
-
----
-
-## Support
-
-For issues, questions, or contributions, please open an issue on GitHub.
-
-**Tested on:**
-
-- Python 3.12
-- Ubuntu 24.04 LTS / macOS / Windows
-- GPU: NVIDIA RTX 5080 (16GB VRAM)
-- CPU: Intel i7-14700F (28 cores)
+If you use this pipeline in research, please cite: TBD

@@ -70,7 +70,7 @@ class DatasetConfig:
     level_allowed_values: Optional[dict[str, list[str]]] = None
     file_suffix_filter: Optional[str] = None
     audio_extensions: list[str] = field(default_factory=lambda: [".wav"])
-    skip_prefixes: list[str] = field(default_factory=lambda: ["._", ".DS"])
+    skip_prefixes: list[str] = field(default_factory=lambda: ["._", ".DS", "_DS"])
     sample_rate: int = 16000
     frame_duration: float = 3.0
     overlap_percentage: float = 0.25
