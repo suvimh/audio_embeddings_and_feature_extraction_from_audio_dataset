@@ -115,6 +115,7 @@ def run_extraction(
     extraction_config_path: str | Path,
     log_file: Optional[str | Path] = None,
     console_output: bool = True,
+    overwrite: bool = False,
 ) -> dict:
     """
     Run the full extraction pipeline.
@@ -215,7 +216,7 @@ def run_extraction(
                         extractor_config=extractor_config,
                         output_dir=output_dir,
                         checkpoint_dir=output_dir,
-                        overwrite=False,
+                        overwrite=overwrite,
                         batch_size=batch_size,
                     )
 

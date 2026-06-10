@@ -45,7 +45,7 @@ def make_extractor(
             make_vggish_extractor,
         )
 
-        return make_vggish_extractor(sample_rate=sample_rate)
+        return make_vggish_extractor()
 
     elif name_lower == "clap":
         from scripts.dl_embeddings.extract_clap_embeddings import make_clap_extractor
