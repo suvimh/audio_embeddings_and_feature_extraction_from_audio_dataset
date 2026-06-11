@@ -4,6 +4,8 @@ Extractor Registry
 Central registry mapping extractor names to factory functions and metadata.
 """
 
+from __future__ import annotations
+
 from typing import Dict, Callable, Optional, Any
 from scripts.utils import FeatureExtractorConfig
 

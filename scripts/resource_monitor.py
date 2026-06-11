@@ -4,6 +4,8 @@ Resource Monitoring Utilities
 Detect available CPU, RAM, and GPU memory for intelligent batch sizing.
 """
 
+from __future__ import annotations
+
 import psutil
 import os
 from dataclasses import dataclass

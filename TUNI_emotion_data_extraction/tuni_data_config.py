@@ -1,5 +1,5 @@
 # ---------------------------------------------------------------------------
-# TUNI Emotion Dataset Config (used from VocalSet_data_extraction notebook)
+# TUNI Emotion Dataset Config
 # ---------------------------------------------------------------------------
 
 from scripts.config.dataset_config import DatasetConfig
@@ -9,7 +9,7 @@ DATA_INPUT_DIR = (
 )
 
 
-def vocalset_dataset_config(
+def tuni_dataset_config(
     root_dir: str = DATA_INPUT_DIR,
     frame_duration: float = 3.0,
     sample_rate: int = 16000,
@@ -42,4 +42,4 @@ def vocalset_dataset_config(
     )
 
 
-vocalset_dataset = vocalset_dataset_config()
+tuni_dataset = tuni_dataset_config()

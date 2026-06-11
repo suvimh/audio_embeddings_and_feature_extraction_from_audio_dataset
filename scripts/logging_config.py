@@ -4,6 +4,8 @@ Structured JSON-Lines Logging
 Provides JSON-lines format logging for extraction pipeline with resource monitoring.
 """
 
+from __future__ import annotations
+
 import json
 import logging
 from datetime import datetime

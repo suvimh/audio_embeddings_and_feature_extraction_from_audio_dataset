@@ -4,6 +4,8 @@ Extraction Configuration
 Specifies which embeddings and features to extract, window lengths, and output settings.
 """
 
+from __future__ import annotations
+
 from dataclasses import dataclass, field, asdict
 from typing import Optional, Dict, Any, List
 from pathlib import Path

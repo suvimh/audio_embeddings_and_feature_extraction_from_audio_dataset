@@ -5,6 +5,8 @@ Coordinates the extraction pipeline: loads configs, instantiates extractors,
 manages window lengths, and orchestrates extraction execution.
 """
 
+from __future__ import annotations
+
 import time
 from pathlib import Path
 from dataclasses import replace
