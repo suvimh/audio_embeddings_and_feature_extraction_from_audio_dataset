@@ -4,17 +4,17 @@
 
 from scripts.config.dataset_config import DatasetConfig
 
-DATA_INPUT_DIR = "/home/suvihaara/Documents/PhD/DATA/VocalSet/VocalSet_fixed/FULL"
+DATA_INPUT_DIR = ""
 
 
-def vocalset_dataset_config(
+def tuni_emotion_dataset_config(
     root_dir: str = DATA_INPUT_DIR,
     frame_duration: float = 3.0,
     sample_rate: int = 16000,
     overlap_percentage: float = 0.25,
 ) -> DatasetConfig:
     """
-    VocalSet dataset.
+    TUNI dataset.
 
     Folder structures
     -----------------
@@ -26,37 +26,20 @@ def vocalset_dataset_config(
 
     Label columns in output DataFrame
     ----------------------------------
-    singer              : participant ID, e.g. 'female6'
-    vocal_technique     : e.g. 'breathy', 'belt', 'vibrato', etc.
-    exercise_type       : vocal exercise type, e.g. 'scales', 'long_tones'
+    singer              : participant name, e.g. 'Anu_Mattila'
+    genre               : genre of the song, e.g. 'pop', 'classical'
+    emotion             : emotion of the song, e.g. 'joy', 'sadness', 'anger', 'gentleness', 'neutral'
     """
     return DatasetConfig(
-        name="vocalset_dataset",
+        name="tuni_emotion_dataset",
         root_dir=root_dir,
         # Fallback schema + union of all column names across subgroups
-        level_names=["singer", "exercise_type", "vocal_technique"],
+        level_names=["singer", "genre", "emotion"],
         participant_level=0,
         level_allowed_values={
-            "exercise_type": ["arpeggios", "excerpts", "long_tones", "scales"],
-            "vocal_technique": [
-                "belt",
-                "breathy",
-                "straight",
-                "vibrato",
-                "lip_trill",
-                "trill",
-                "trillo",
-                "vocal_fry",
-                "inhaled",
-                "spoken",
-                "fast_piano",
-                "slow_piano",
-                "fast_forte",
-                "slow_forte",
-                "forte",
-                "messa",  # Messa di voce
-                "pp",  # Pianissimo
-            ],
+            "singer": ["Anu_Mattila", "Anniina_Honkala", "Bianca_Hösli", "Elina_Lahtinen", "Liisi_Petterson", "Maarit_Aura", "Marja_Erdogan", "Saga_Ohlsson_1", "Sanna_Vähälä", "Tero_Ikävalko", "Tommi_Grönberg", "Tua_Hakanpää", "Veera_Tapanainen"],
+            "genre": [ "pop", "classical"],
+            "emotion": ["joy", "sadness", "anger", "gentleness", "neutral"],
         },
         frame_duration=frame_duration,
         sample_rate=sample_rate,
@@ -64,4 +47,4 @@ def vocalset_dataset_config(
     )
 
 
-vocalset_dataset = vocalset_dataset_config()
+tuni_emotion_dataset = tuni_emotion_dataset_config()

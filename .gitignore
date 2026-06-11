@@ -11,3 +11,5 @@ dist/
 *.swo
 
 .DS_Store
+
+TUNI_emotion_dataset_og/
