@@ -31,6 +31,9 @@ pip install -r requirements.txt
 
 # Install CLAP embeddings (if using CLAP extractor)
 pip install git+https://github.com/microsoft/CLAP.git
+
+# Set up project using toml file
+pip install -e .
 ```
 
 ### 2. Configure Your Dataset
@@ -683,6 +686,7 @@ To add a new extractor:
 3. Register in `scripts/extractors_registry.py` inside `make_extractor()` and `EXTRACTOR_METADATA`
 4. Add example in `examples/extraction_config_example.py`
 5. Update this README
+6. If modifying the project toml, reinstall -- pip install -e
 
 See [DEVELOPMENT.md](DEVELOPMENT.md) for full details.
 

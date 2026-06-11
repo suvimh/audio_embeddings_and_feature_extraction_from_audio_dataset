@@ -4,17 +4,17 @@
 
 from scripts.config.dataset_config import DatasetConfig
 
-DATA_INPUT_DIR = "/home/suvihaara/Documents/PhD/DATA/VTE/VOICE_DATA_CLEAN/"
+DATA_INPUT_DIR = "/home/suvihaara/Documents/PhD/DATA/VTE/SingBAP_MAYBE_PUBLISHABLE_VERSION/VOICE_DATA/"
 
 
-def vte_dataset_config(
+def singBAP_dataset_config(
     root_dir: str = DATA_INPUT_DIR,
     frame_duration: float = 3.0,
     sample_rate: int = 16000,
     overlap_percentage: float = 0.25,
 ) -> DatasetConfig:
     """
-    VTE voice dataset.
+    SingBAP voice dataset.
 
     Folder structures
     -----------------
@@ -40,8 +40,9 @@ def vte_dataset_config(
     scale       : vocal exercise type, e.g. 'glissando'
     take        : recording take number
     """
+
     return DatasetConfig(
-        name="vocalmod_vte_dataset",
+        name="singBAP_dataset",
         root_dir=root_dir,
         # Fallback schema + union of all column names across subgroups
         level_names=["experience", "singer", "phonation", "condition", "scale", "take"],
@@ -89,3 +90,5 @@ def vte_dataset_config(
         sample_rate=sample_rate,
         overlap_percentage=overlap_percentage,
     )
+
+singBAP_dataset = singBAP_dataset_config()
