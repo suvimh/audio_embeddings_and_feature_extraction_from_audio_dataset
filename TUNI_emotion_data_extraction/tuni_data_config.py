@@ -4,7 +4,7 @@
 
 from scripts.config.dataset_config import DatasetConfig
 
-DATA_INPUT_DIR = ""
+DATA_INPUT_DIR = "/Users/pubert/Downloads/SkyNote/audio_repo/audio_embeddings_and_feature_extraction_from_audio_dataset/wav"
 
 
 def tuni_emotion_dataset_config(
@@ -18,9 +18,8 @@ def tuni_emotion_dataset_config(
 
     Folder structures
     -----------------
-    vocalset singers:
-        <root>/female6/scales/fast_forte/f6_scales_c_fast_forte_a.wav
-        Levels: singer_ID / exercise_type / vocal_technique / takes (all) .. _a.wav
+    TUNI singers (wav):
+        Levels: singer / genre / emotion / wav files
 
     All recording files are processed (all .wav).
 
