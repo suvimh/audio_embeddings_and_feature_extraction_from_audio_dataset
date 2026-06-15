@@ -29,9 +29,11 @@ conda activate audio_extraction
 # Install dependencies
 pip install -r requirements.txt
 
-# Install CLAP embeddings (if using CLAP extractor)
-pip install git+https://github.com/microsoft/CLAP.git
+# Install extractor models (VGGish, CLAP, Whisper)
+pip install -r requirements-extractors.txt
 ```
+
+**Dataset-specific guides:** [TUNI Emotion Dataset](TUNI_emotion_data_extraction/README.md)
 
 ### 2. Configure Your Dataset
 
@@ -108,14 +110,14 @@ tail -f extraction_TIMESTAMP.jsonl
 
 **Output Files:**
 
+Naming pattern: `{dataset_name}_{extractor_name}_{duration}s.parquet`
+
 ```
 /path/to/output/
-  vggish_window_3s.parquet
-  vggish_window_5s.parquet
-  clap_window_3s.parquet
-  clap_window_5s.parquet
-  whisper_window_3s.parquet
-  whisper_window_5s.parquet
+  my_audio_dataset_vggish_3.0s.parquet
+  my_audio_dataset_clap-2023_3.0s.parquet
+  my_audio_dataset_whisper_whisper-base_3.0s.parquet
+  my_audio_dataset_opensmile-compare-2016_3.0s.parquet
   extraction_TIMESTAMP.jsonl
 ```
 
@@ -364,8 +366,8 @@ print("Generated output files:")
 for f in output_files:
     print(f"  - {f.name}")
 
-# Load a specific embedding
-df_vggish = pd.read_parquet(output_dir / "vggish_window_3s.parquet")
+# Load a specific embedding (adjust dataset name, extractor, and duration)
+df_vggish = pd.read_parquet(output_dir / "my_audio_dataset_vggish_3.0s.parquet")
 
 print(f"\nVGGish embeddings shape: {df_vggish.shape}")
 print(f"Columns: {list(df_vggish.columns)}")
@@ -484,7 +486,7 @@ run_extraction(
 )
 
 # Load results
-df = pd.read_parquet(Path(extraction.output_dir) / "vggish_window_3s.parquet")
+df = pd.read_parquet(Path(extraction.output_dir) / "my_audio_dataset_vggish_3.0s.parquet")
 print(f"Processed {len(df)} frames")
 print(f"Columns: {list(df.columns)}")
 ```
@@ -498,7 +500,7 @@ All embeddings and features are saved as **Apache Parquet** with metadata:
 import pandas as pd
 from scripts.utils import load_parquet
 
-df = load_parquet("output/vggish_window_3s.parquet")
+df = load_parquet("output/my_audio_dataset_vggish_3.0s.parquet")
 
 print(df.columns)
 # Index(['speaker', 'condition', 'filename', 'filepath', 'frame_index',
@@ -513,7 +515,7 @@ print(embeddings[0].shape)  # (128,) for VGGish
 
 # Metadata JSON sidecar
 import json
-with open("output/vggish_window_3s.json") as f:
+with open("output/my_audio_dataset_vggish_3.0s.json") as f:
     metadata = json.load(f)
 ```
 
@@ -669,7 +671,7 @@ dataset_config.py + extraction_config.py
            ↓
     HDF5 → Parquet conversion
            ↓
-    output/{extractor}_window_{duration}s.parquet
+    output/{dataset_name}_{extractor_name}_{duration}s.parquet
 ```
 
 ---

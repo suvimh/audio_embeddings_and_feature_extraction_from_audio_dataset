@@ -1,10 +1,13 @@
 # ---------------------------------------------------------------------------
-# VocalSet Dataset Config
+# TUNI Emotion Dataset Config
 # ---------------------------------------------------------------------------
+
+from pathlib import Path
 
 from scripts.config.dataset_config import DatasetConfig
 
-DATA_INPUT_DIR = "/Users/pubert/Downloads/SkyNote/audio_repo/audio_embeddings_and_feature_extraction_from_audio_dataset/wav"
+_REPO_ROOT = Path(__file__).resolve().parent.parent
+DATA_INPUT_DIR = str(_REPO_ROOT / "wav")
 
 
 def tuni_emotion_dataset_config(

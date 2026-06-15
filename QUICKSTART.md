@@ -21,10 +21,10 @@ conda activate audio_extraction
 
 # Install dependencies
 pip install -r requirements.txt
-
-# (Optional) Install CLAP if using CLAP extractor
-pip install git+https://github.com/microsoft/CLAP.git
+pip install -r requirements-extractors.txt
 ```
+
+**TUNI emotion dataset:** see [TUNI_emotion_data_extraction/README.md](TUNI_emotion_data_extraction/README.md)
 
 ## Step 1: Prepare Your Dataset
 
@@ -199,7 +199,7 @@ Errors: 0
 Duration: 15.6s
 Log file: /data/output/extraction_20260507_103000.jsonl
 Output files:
-  - /data/output/vggish_window_3s.parquet
+  - /data/output/my_audio_data_vggish_3.0s.parquet
 ============================================================
 ```
 
@@ -209,7 +209,7 @@ Output files:
 from scripts.utils import load_parquet
 import pandas as pd
 
-df = load_parquet("/data/output/vggish_window_3s.parquet")
+df = load_parquet("/data/output/my_audio_data_vggish_3.0s.parquet")
 
 print(f"Shape: {df.shape}")  # (N_frames, n_columns)
 print(df.columns)           # Show all columns
@@ -260,13 +260,21 @@ config = ExtractionConfig(
 
 ### Q: "Extractor model failed to load"
 
-**A:** Ensure dependencies are installed:
+**A:** Install extractor dependencies:
 
 ```bash
-pip install transformers torch  # For Whisper
-pip install git+https://github.com/microsoft/CLAP.git  # For CLAP
-pip install opensmile  # For OpenSMILE
+pip install -r requirements-extractors.txt
 ```
+
+Per-extractor: `msclap` (CLAP), `tensorflow` + `tensorflow-hub` (VGGish), `transformers` + `torch` (Whisper), `opensmile` (OpenSmile).
+
+### Q: CLAP fails with torchcodec / FFmpeg on macOS
+
+**A:** Install FFmpeg (`conda install -c conda-forge ffmpeg`) and see [TUNI_emotion_data_extraction/README.md](TUNI_emotion_data_extraction/README.md#mac-setup-clap--vggish).
+
+### Q: VGGish fails with SSL certificate error (macOS)
+
+**A:** Run `/Applications/Python 3.12/Install Certificates.command`, then retry.
 
 ### Q: "ModuleNotFoundError: No module named '...'"
 

@@ -29,3 +29,5 @@ scikit-learn>=1.4.0,<2.0.0
 matplotlib>=3.8.0,<4.0.0
 seaborn>=0.13.0,<0.14.0
 plotly>=5.15.0,<6.0.0
+
+# For VGGish, CLAP, Whisper: pip install -r requirements-extractors.txt
