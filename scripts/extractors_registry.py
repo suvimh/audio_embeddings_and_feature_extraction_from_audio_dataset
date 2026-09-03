@@ -79,6 +79,13 @@ def make_extractor(
             sample_rate=sample_rate,
         )
 
+    elif name_lower == "mfcc":
+        from scripts.feature_sets.extract_mfcc import make_mfcc_extractor
+
+        # allow extractor_params to override n_mfcc
+        n_mfcc = int(extractor_params.get("n_mfcc", 13))
+        return make_mfcc_extractor(n_mfcc=n_mfcc, sample_rate=sample_rate)
+
     else:
         valid_names = {"vggish", "clap", "whisper", "opensmile"}
         raise ValueError(f"Unknown extractor '{name}'. Valid names: {valid_names}")
@@ -162,6 +169,18 @@ EXTRACTOR_METADATA = {
                 "default": "Functionals",
                 "description": "Feature level (functionals = statistics over time)",
             },
+        },
+    },
+    "mfcc": {
+        "description": "Classic MFCC feature vectors (mean over time per frame)",
+        "embedding_dim": 13,
+        "default_params": {"n_mfcc": 13},
+        "params": {
+            "n_mfcc": {
+                "type": "int",
+                "default": 13,
+                "description": "Number of MFCC coefficients to compute",
+            }
         },
     },
 }

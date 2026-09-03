@@ -62,7 +62,7 @@ class ExtractionConfig:
 
     def __post_init__(self) -> None:
         """Validate configuration parameters."""
-        valid_extractors = {"vggish", "clap", "whisper", "opensmile"}
+        valid_extractors = {"vggish", "clap", "whisper", "opensmile", "mfcc"}
 
         for extractor in self.extractors:
             if extractor not in valid_extractors:

@@ -83,3 +83,15 @@ comprehensive_extraction = ExtractionConfig(
     gpu_cache_cleanup=True,
     num_workers=4,
 )
+
+
+# Example 6: MFCC-only extraction (traditional spectral features)
+mfcc_only = ExtractionConfig(
+    extractors=["mfcc"],
+    output_dir="/path/to/output/mfcc",
+    window_lengths=[1.0, 3.0],
+    extractor_params={"mfcc": {"n_mfcc": 13}},
+    batch_size="auto",
+    gpu_cache_cleanup=False,
+    num_workers=4,
+)

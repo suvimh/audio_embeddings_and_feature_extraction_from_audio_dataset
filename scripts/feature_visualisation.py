@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis as LDA
-
+from matplotlib.colors import LinearSegmentedColormap
 
 def prepare_and_plot_lda(
     df,
@@ -75,11 +75,46 @@ def prepare_and_plot_lda(
     )
     data_plot["Plot_Hue_Label"] = data[plot_hue_source].values
 
+    # Resolve palette: support special 'musa_palette' which maps classes to
+    # the project's custom colours.
+    if isinstance(palette, str) and palette == "musa_palette":
+        hue_names = list(data_plot["Plot_Hue_Label"].unique())
+        n_labels = len(hue_names)
+
+        # Cyan → purple → pink
+        musa_cmap = LinearSegmentedColormap.from_list(
+            "musa",
+            ["#6afcfa", "#8A5ACD", "#fe73ab"]
+        )
+
+        # Generate exactly as many colours as there are labels
+        colours = [musa_cmap(x) for x in np.linspace(0, 1, n_labels)]
+
+        # Convert RGBA → hex
+        colours = [
+            "#{:02x}{:02x}{:02x}".format(
+                int(r * 255),
+                int(g * 255),
+                int(b * 255)
+            )
+            for r, g, b, _ in colours
+        ]
+
+        colour_map = {
+            name: colour
+            for name, colour in zip(hue_names, colours)
+        }
+
+        resolved_palette = colour_map
+
+    else:
+        resolved_palette = palette
+
     # Plot
     if mode == "2d" or n_components < 3:
         plt.figure(figsize=(10, 6))
         sns.scatterplot(
-            x="LD1", y="LD2", hue="Plot_Hue_Label", data=data_plot, palette=palette
+            x="LD1", y="LD2", hue="Plot_Hue_Label", data=data_plot, palette=resolved_palette
         )
         plt.title(f"LDA Projection of {data_type} (2D)")
         plt.xlabel("LD1")
@@ -88,8 +123,12 @@ def prepare_and_plot_lda(
     else:
         fig = plt.figure(figsize=(10, 8))
         ax = fig.add_subplot(111, projection="3d")
-        hue_class_names = data_plot["Plot_Hue_Label"].unique()
-        colours = sns.color_palette(palette, n_colors=len(hue_class_names))
+        hue_class_names = list(data_plot["Plot_Hue_Label"].unique())
+        if isinstance(palette, str) and palette == "musa_palette":
+            colours = [resolved_palette[name] for name in hue_class_names]
+        else:
+            colours = sns.color_palette(palette, n_colors=len(hue_class_names))
+
         for i, hue_cls in enumerate(hue_class_names):
             idx = data_plot["Plot_Hue_Label"] == hue_cls
             ax.scatter(
