@@ -41,7 +41,7 @@ def vte_dataset_config(
     take        : recording take number
     """
     return DatasetConfig(
-        name="vocalmod_vte_dataset",
+        name="SingBAP_vte_dataset",
         root_dir=root_dir,
         # Fallback schema + union of all column names across subgroups
         level_names=["experience", "singer", "phonation", "condition", "scale", "take"],

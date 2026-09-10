@@ -3,4 +3,4 @@ name = "audio-embed-extraction"
 version = "0.1.0"
 
 [tool.setuptools]
-packages = ["scripts", "VocalMod_data_extraction", "VocalSet_data_extraction"]
+packages = ["scripts", "SingBAP_data_extraction", "VocalSet_data_extraction"]
