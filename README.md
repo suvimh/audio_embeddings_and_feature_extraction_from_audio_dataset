@@ -31,6 +31,7 @@ pip install -r requirements.txt
 
 # Install CLAP embeddings (if using CLAP extractor)
 pip install git+https://github.com/microsoft/CLAP.git
+conda install -c conda-forge ffmpeg
 ```
 
 ### 2. Configure Your Dataset

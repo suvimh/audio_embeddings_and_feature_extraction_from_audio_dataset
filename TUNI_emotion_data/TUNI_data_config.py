@@ -4,7 +4,7 @@
 
 from scripts.config.dataset_config import DatasetConfig
 
-DATA_INPUT_DIR = ""
+DATA_INPUT_DIR = "/home/suvihaara/Documents/PhD/DATA/TUNI_emotion_dataset/wav"
 
 
 def tuni_emotion_dataset_config(
@@ -37,7 +37,7 @@ def tuni_emotion_dataset_config(
         level_names=["singer", "genre", "emotion"],
         participant_level=0,
         level_allowed_values={
-            "singer": ["Anu_Mattila", "Anniina_Honkala", "Bianca_Hösli", "Elina_Lahtinen", "Liisi_Petterson", "Maarit_Aura", "Marja_Erdogan", "Saga_Ohlsson_1", "Sanna_Vähälä", "Tero_Ikävalko", "Tommi_Grönberg", "Tua_Hakanpää", "Veera_Tapanainen"],
+            "singer": ["Anu_Mattila", "Anniina_Honkala", "Bianca_Hosli", "Elina_Lahtinen", "Liisi_Petterson", "Maarit_Aura", "Marja_Erdogan", "Saga_Ohlsson_1", "Sanna_Vahala", "Tero_Ikavalko", "Tommi_Gronberg", "Tua_Hakanpaa", "Veera_Tapanainen"],
             "genre": [ "pop", "classical"],
             "emotion": ["joy", "sadness", "anger", "gentleness", "neutral"],
         },
@@ -46,5 +46,4 @@ def tuni_emotion_dataset_config(
         overlap_percentage=overlap_percentage,
     )
 
-
-tuni_emotion_dataset = tuni_emotion_dataset_config()
+TUNI_dataset_config = tuni_emotion_dataset_config()
