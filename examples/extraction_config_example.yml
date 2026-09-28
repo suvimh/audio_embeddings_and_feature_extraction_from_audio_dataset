@@ -1,0 +1,25 @@
+# Multi-window Extraction Configuration (YAML)
+# ============================================
+# Extract multiple DL embeddings with multiple window lengths
+# Save as extraction_config.yml
+
+extractors:
+  - vggish
+  - clap
+  - whisper
+
+output_dir: "/path/to/output/multi_embeddings"
+
+window_lengths:
+  - 3.0
+  - 5.0
+
+extractor_params:
+  clap:
+    version: "2024"
+  whisper:
+    model_name: "openai/whisper-base"
+
+batch_size: "auto"
+gpu_cache_cleanup: true
+num_workers: 4
