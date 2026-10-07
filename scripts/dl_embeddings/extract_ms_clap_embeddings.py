@@ -1,5 +1,5 @@
 """
-CLAP Feature Extractor
+MS-CLAP Feature Extractor
 ======================
 Uses MS-CLAP audio encoder to extract embeddings.
 Plugs into the same DatasetConfig / utils pipeline as VGGish and Whisper.
@@ -25,10 +25,10 @@ from msclap import CLAP
 from scripts.utils import FeatureExtractorConfig, extract_dataset_features
 
 # ---------------------------------------------------------------------------
-# CLAP embedding dims by version
+# MS CLAP embedding dims by version
 # ---------------------------------------------------------------------------
 
-CLAP_EMBEDDING_DIMS = {
+MS_CLAP_EMBEDDING_DIMS = {
     "2023": 512,
     "2024": 1024,
 }
@@ -39,7 +39,7 @@ CLAP_EMBEDDING_DIMS = {
 # ---------------------------------------------------------------------------
 
 
-def make_clap_extractor(
+def make_ms_clap_extractor(
     version: str = "2023",
     sample_rate: int = 16000,
 ) -> FeatureExtractorConfig:
@@ -56,7 +56,7 @@ def make_clap_extractor(
     print(f"[INFO] Loading CLAP {version} (cuda={use_cuda})")
     clap_model = CLAP(version=version, use_cuda=use_cuda)
 
-    embedding_dim = CLAP_EMBEDDING_DIMS.get(version, 512)
+    embedding_dim = MS_CLAP_EMBEDDING_DIMS.get(version, 512)
 
     # One persistent temp file, reused for every frame to avoid repeated
     # file creation overhead

@@ -108,7 +108,7 @@ config = ExtractionConfig(
 
 ```python
 ExtractionConfig(
-    extractors=["vggish", "clap", "whisper"],
+    extractors=["vggish", "ms-clap", "whisper"],
     output_dir="/data/output",
     window_lengths=[3.0],
     batch_size="auto",

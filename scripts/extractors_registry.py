@@ -47,11 +47,11 @@ def make_extractor(
 
         return make_vggish_extractor()
 
-    elif name_lower == "clap":
-        from scripts.dl_embeddings.extract_clap_embeddings import make_clap_extractor
+    elif name_lower == "ms-clap":
+        from scripts.dl_embeddings.extract_ms_clap_embeddings import make_ms_clap_extractor
 
         version = extractor_params.get("version", "2023")
-        return make_clap_extractor(version=version, sample_rate=sample_rate)
+        return make_ms_clap_extractor(version=version, sample_rate=sample_rate)
 
     elif name_lower == "whisper":
         from scripts.dl_embeddings.extract_whisper_embeddings import (
@@ -87,7 +87,7 @@ def make_extractor(
         return make_mfcc_extractor(n_mfcc=n_mfcc, sample_rate=sample_rate)
 
     else:
-        valid_names = {"vggish", "clap", "whisper", "opensmile"}
+        valid_names = {"vggish", "ms-clap", "whisper", "opensmile"}
         raise ValueError(f"Unknown extractor '{name}'. Valid names: {valid_names}")
 
 
@@ -101,7 +101,7 @@ EXTRACTOR_METADATA = {
             # VGGish is fixed, no parameters
         },
     },
-    "clap": {
+    "ms-clap": {
         "description": "MS-CLAP audio-text embeddings (PyTorch)",
         "embedding_dims": {"2023": 512, "2024": 1024},
         "default_params": {"version": "2023"},

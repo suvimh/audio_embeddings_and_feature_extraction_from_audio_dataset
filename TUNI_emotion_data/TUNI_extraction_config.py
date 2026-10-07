@@ -9,7 +9,7 @@ DATA_OUTPUT_DIR = "/home/suvihaara/Documents/PhD/DATA/TUNI_emotion_dataset/embed
 TUNI_extraction = ExtractionConfig(
     extractors=[
         "opensmile",
-        "clap",
+        "ms-clap",
         "whisper",
     ],
     output_dir=DATA_OUTPUT_DIR,

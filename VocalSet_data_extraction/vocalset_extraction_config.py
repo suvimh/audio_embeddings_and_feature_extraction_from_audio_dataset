@@ -13,7 +13,7 @@ vocalset_extraction = ExtractionConfig(
         "mfcc",
         "opensmile",
         "vggish",
-        "clap",
+        "ms-clap",
         "whisper",
     ],
     output_dir=DATA_OUTPUT_DIR,

@@ -1,20 +1,20 @@
 # ---------------------------------------------------------------------------
-# VTE Dataset Config
+# SingBAP Dataset Config
 # ---------------------------------------------------------------------------
 
 from scripts.config.dataset_config import DatasetConfig
 
-DATA_INPUT_DIR = "/home/suvihaara/Documents/PhD/DATA/VTE/VOICE_DATA_CLEAN/"
+DATA_INPUT_DIR = "DATA/VTE/SingBAP/VOICE_DATA"
 
 
-def vte_dataset_config(
+def singBAP_dataset_config(
     root_dir: str = DATA_INPUT_DIR,
     frame_duration: float = 3.0,
     sample_rate: int = 16000,
     overlap_percentage: float = 0.25,
 ) -> DatasetConfig:
     """
-    VTE voice dataset.
+    SingBAP voice dataset.
 
     Folder structures
     -----------------

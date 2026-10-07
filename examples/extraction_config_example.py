@@ -21,11 +21,11 @@ vggish_only = ExtractionConfig(
 
 # Example 2: Multi-window extraction with multiple embeddings
 multi_window_multi_embeddings = ExtractionConfig(
-    extractors=["vggish", "clap", "whisper"],
+    extractors=["vggish", "ms-clap", "whisper"],
     output_dir="/path/to/output/multi_embeddings",
     window_lengths=[3.0, 5.0],  # Will extract for both 3s and 5s frames
     extractor_params={
-        "clap": {"version": "2024"},  # Use CLAP 2024 model (1024-dim)
+        "ms-clap": {"version": "2024"},  # Use CLAP 2024 model (1024-dim)
         "whisper": {"model_name": "openai/whisper-base"},  # Specify model variant
     },
     batch_size="auto",
@@ -36,11 +36,11 @@ multi_window_multi_embeddings = ExtractionConfig(
 
 # Example 3: Mix DL embeddings and traditional features
 mixed_embeddings_and_features = ExtractionConfig(
-    extractors=["vggish", "clap", "opensmile"],
+    extractors=["vggish", "ms-clap", "opensmile"],
     output_dir="/path/to/output/combined",
     window_lengths=[3.0],
     extractor_params={
-        "clap": {"version": "2023"},
+        "ms-clap": {"version": "2023"},
         "opensmile": {
             "feature_set": "eGeMAPSv02",  # Smaller, interpretable feature set
             "feature_level": "Functionals",
@@ -71,11 +71,11 @@ opensmile_only = ExtractionConfig(
 
 # Example 5: All extractors with comprehensive parameter control
 comprehensive_extraction = ExtractionConfig(
-    extractors=["vggish", "clap", "whisper", "opensmile"],
+    extractors=["vggish", "ms-clap", "whisper", "opensmile"],
     output_dir="/path/to/output/comprehensive",
     window_lengths=[3.0, 5.0, 7.0],
     extractor_params={
-        "clap": {"version": "2024"},
+        "ms-clap": {"version": "2024"},
         "whisper": {"model_name": "openai/whisper-small"},
         "opensmile": {"feature_set": "ComParE_2016"},
     },

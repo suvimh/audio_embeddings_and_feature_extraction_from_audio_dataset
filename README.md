@@ -77,11 +77,11 @@ Create a Python file `configs/my_extraction.py`:
 from scripts.config.extraction_config import ExtractionConfig
 
 extraction = ExtractionConfig(
-    extractors=["vggish", "clap", "whisper"],
+    extractors=["vggish", "ms-clap", "whisper"],
     output_dir="/path/to/output",
     window_lengths=[3.0, 5.0],  # Extract for both 3s and 5s frames
     extractor_params={
-        "clap": {"version": "2023"},
+        "ms-clap": {"version": "2023"},
         "whisper": {"model_name": "openai/whisper-base"},
     },
     batch_size="auto",
@@ -177,21 +177,21 @@ Define which embeddings/features to extract and output settings in `scripts/conf
 
 **Key Parameters:**
 
-| Parameter           | Type        | Default | Description                                                     |
-| ------------------- | ----------- | ------- | --------------------------------------------------------------- |
-| `extractors`        | list[str]   | —       | Extractors to run: `["vggish", "clap", "whisper", "opensmile"]` |
-| `output_dir`        | str/Path    | —       | Output directory for `.parquet` files                           |
-| `window_lengths`    | list[float] | `[3.0]` | Frame durations to extract (seconds)                            |
-| `extractor_params`  | dict        | `{}`    | Per-extractor parameters (see below)                            |
-| `batch_size`        | int/"auto"  | "auto"  | Files per batch before HDF5 flush; "auto" = calculate from RAM  |
-| `gpu_cache_cleanup` | bool        | False   | Empty GPU cache between batches (slower but safer)              |
-| `num_workers`       | int         | 4       | Thread pool workers for file I/O (0 = sequential)               |
+| Parameter           | Type        | Default | Description                                                                      |
+| ------------------- | ----------- | ------- | -------------------------------------------------------------------------------- |
+| `extractors`        | list[str]   | —       | Extractors to run: `["vggish", "ms-clap", "laion-clap", "whisper", "opensmile"]` |
+| `output_dir`        | str/Path    | —       | Output directory for `.parquet` files                                            |
+| `window_lengths`    | list[float] | `[3.0]` | Frame durations to extract (seconds)                                             |
+| `extractor_params`  | dict        | `{}`    | Per-extractor parameters (see below)                                             |
+| `batch_size`        | int/"auto"  | "auto"  | Files per batch before HDF5 flush; "auto" = calculate from RAM                   |
+| `gpu_cache_cleanup` | bool        | False   | Empty GPU cache between batches (slower but safer)                               |
+| `num_workers`       | int         | 4       | Thread pool workers for file I/O (0 = sequential)                                |
 
 **Extractor Parameters:**
 
 ```python
 extractor_params = {
-    "clap": {
+    "ms-clap": {
         "version": "2023",  # or "2024" (1024-dim)
     },
     "whisper": {
@@ -286,11 +286,11 @@ print(f"Levels: {dataset.level_names}")
 ```python
 # Define extraction configuration
 extraction = ExtractionConfig(
-    extractors=["vggish", "clap", "whisper"],
+    extractors=["vggish", "ms-clap", "whisper"],
     output_dir="/path/to/output",
     window_lengths=[3.0, 5.0],
     extractor_params={
-        "clap": {"version": "2023"},
+        "ms-clap": {"version": "2023"},
         "whisper": {"model_name": "openai/whisper-base"},
     },
     batch_size="auto",

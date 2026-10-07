@@ -140,7 +140,7 @@ Outputs: `vggish_window_3s.parquet`, `vggish_window_5s.parquet`, `vggish_window_
 ### ✅ Multi-Extractor Runs
 
 ```python
-extractors=["vggish", "clap", "whisper", "opensmile"]
+extractors=["vggish", "ms-clap", "laion-clap", "whisper", "opensmile"]
 ```
 
 Outputs for each combination of (extractor, window_length)
@@ -200,7 +200,7 @@ EOF
 cat > extraction.py << 'EOF'
 from scripts.config.extraction_config import ExtractionConfig
 config = ExtractionConfig(
-    extractors=["vggish", "clap"],
+    extractors=["vggish", "ms-clap"],
     output_dir="/path/to/output",
     window_lengths=[3.0, 5.0],
 )
