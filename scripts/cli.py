@@ -39,9 +39,11 @@ Examples:
 
 Available extractors:
   - vggish: VGGish embeddings (128-dim)
-  - clap: MS-CLAP audio-text embeddings (512/1024-dim)
+  - ms-clap: MS-CLAP audio-text embeddings (1024-dim)
+  - laion-clap: LAION-CLAP audio-text embeddings (512-dim, 48kHz)
   - whisper: Whisper encoder embeddings (384-1280-dim)
   - opensmile: Traditional acoustic features (62-6373-dim)
+  - mfcc: Classic MFCC feature vectors (13-dim)
         """,
     )
 

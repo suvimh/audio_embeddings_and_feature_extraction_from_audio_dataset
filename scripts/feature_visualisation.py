@@ -7,13 +7,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis as LDA
-<<<<<<< Updated upstream
 from matplotlib.colors import LinearSegmentedColormap
-=======
-
 from scripts.feature_importance import select_top_features
-
->>>>>>> Stashed changes
 
 def prepare_and_plot_lda(
     df,

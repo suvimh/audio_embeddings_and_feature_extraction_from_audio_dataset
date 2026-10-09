@@ -51,6 +51,7 @@ def tuni_emotion_dataset_config(
         frame_duration=frame_duration,
         sample_rate=sample_rate,
         overlap_percentage=overlap_percentage,
+        enable_silence_trimming=True,
     )
 
 TUNI_dataset_config = tuni_emotion_dataset_config()

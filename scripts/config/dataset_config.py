@@ -59,6 +59,16 @@ class DatasetConfig:
     normalization_mode : str
         Audio normalization strategy: 'peak' (0dB), 'rms', 'lufs', or 'none'.
         Applied to each frame independently.
+    short_audio_handling : str
+        How to handle audio shorter than one frame: 'tile' (repeat the audio
+        to fill the frame, no padding) or 'pad' (zero-pad to the frame length).
+        Zero-padded frames are flagged in the 'padded' output column.
+    pad_tail_window : bool
+        If True, a trailing partial window at the end of the audio is never
+        dropped: one extra frame is zero-padded starting right after the last
+        fully covered frame so the whole recording is still represented.
+        Only matters when overlap > 0 (non-overlapping windows already cover
+        the signal up to the last full frame). Flagged in the 'padded' column.
     """
 
     name: str
@@ -74,10 +84,12 @@ class DatasetConfig:
     sample_rate: int = 16000
     frame_duration: float = 3.0
     overlap_percentage: float = 0.25
-    enable_silence_trimming: bool = True
+    enable_silence_trimming: bool = False
     silence_threshold_db: float = -40.0
     silence_min_duration_ms: float = 250.0
     normalization_mode: str = "none"
+    short_audio_handling: str = "tile"
+    pad_tail_window: bool = False
 
     def __post_init__(self) -> None:
         """Validate configuration parameters."""
@@ -98,6 +110,11 @@ class DatasetConfig:
         if self.silence_min_duration_ms < 0:
             raise ValueError(
                 f"silence_min_duration_ms must be non-negative, got {self.silence_min_duration_ms}"
+            )
+        if self.short_audio_handling not in {"tile", "pad"}:
+            raise ValueError(
+                f"short_audio_handling must be one of {{'tile', 'pad'}}, "
+                f"got '{self.short_audio_handling}'"
             )
 
     def matches_file_filter(self, file_path: Path) -> bool:

@@ -66,6 +66,12 @@ def validate_dataset_config(config: DatasetConfig) -> Tuple[bool, List[str]]:
     if config.normalization_mode not in {"peak", "rms", "lufs", "none"}:
         issues.append(f"ERROR: Invalid normalization_mode: {config.normalization_mode}")
 
+    if config.short_audio_handling not in {"tile", "pad"}:
+        issues.append(
+            f"ERROR: short_audio_handling must be one of {{'tile', 'pad'}}, "
+            f"got '{config.short_audio_handling}'"
+        )
+
     if config.enable_silence_trimming:
         if config.silence_threshold_db > 0:
             issues.append(
@@ -161,14 +167,30 @@ def validate_configs(
     issues.extend(extraction_issues)
 
     # Cross-config checks
-    min_expected_samples = int(
-        min(extraction_config.window_lengths) * dataset_config.sample_rate
-    )
-    if min_expected_samples < 1000:
-        issues.append(
-            f"WARNING: Minimum expected frame size ({min_expected_samples} samples) is very short. "
-            f"Some extractors may fail."
-        )
+    srs = []
+    for extractor in extraction_config.extractors:
+        params = extraction_config.extractor_params.get(extractor, {})
+        sr = params.get("sample_rate", dataset_config.sample_rate)
+        if not isinstance(sr, int) or isinstance(sr, bool) or sr <= 0:
+            issues.append(
+                f"ERROR: sample_rate for extractor '{extractor}' must be a "
+                f"positive int, got {sr!r}"
+            )
+            continue
+        if extractor == "laion-clap" and sr != 48000:
+            issues.append(
+                f"ERROR: laion-clap requires a sample_rate of 48000, got {sr}"
+            )
+        for wl in extraction_config.window_lengths:
+            srs.append(int(wl * sr))
+
+    if srs:
+        min_expected_samples = min(srs)
+        if min_expected_samples < 1000:
+            issues.append(
+                f"WARNING: Minimum expected frame size ({min_expected_samples} samples) "
+                f"is very short. Some extractors may fail."
+            )
 
     is_valid = dataset_valid and extraction_valid
     return is_valid, issues

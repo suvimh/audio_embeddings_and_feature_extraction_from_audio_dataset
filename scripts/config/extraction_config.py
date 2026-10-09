@@ -18,14 +18,19 @@ class ExtractionConfig:
     Parameters
     ----------
     extractors : list[str]
-        List of extractor names to run. Valid names: 'vggish', 'clap', 'whisper', 'opensmile'.
-        Examples: ['vggish', 'clap'], ['whisper', 'opensmile']
+        List of extractor names to run.
+        Valid names: 'vggish', 'ms-clap', 'laion-clap', 'whisper', 'opensmile', 'mfcc'.
+        Examples: ['vggish', 'ms-clap'], ['whisper', 'opensmile', 'laion-clap']
 
     extractor_params : dict[str, dict]
         Optional per-extractor parameters. Overrides defaults for specific extractors.
+        Supported keys per extractor are defined in EXTRACTOR_METADATA. The special
+        key 'sample_rate' (used by all extractors) sets a per-extractor sample rate
+        that overrides the dataset config's sample_rate for both framing and embedding.
         Example: {
-            'clap': {'version': '2024'},
-            'whisper': {'model_name': 'base'}
+            'ms-clap': {'version': '2023'},
+            'laion-clap': {'sample_rate': 48000},
+            'whisper': {'model_name': 'openai/whisper-base'}
         }
 
     window_lengths : list[float]
@@ -62,7 +67,7 @@ class ExtractionConfig:
 
     def __post_init__(self) -> None:
         """Validate configuration parameters."""
-        valid_extractors = {"vggish", "ms-clap", "whisper", "opensmile", "mfcc"}
+        valid_extractors = {"vggish", "ms-clap", "laion-clap", "whisper", "opensmile", "mfcc"}
 
         for extractor in self.extractors:
             if extractor not in valid_extractors:
@@ -72,6 +77,19 @@ class ExtractionConfig:
 
         if not self.extractors:
             raise ValueError("At least one extractor must be specified")
+
+        for extractor, params in self.extractor_params.items():
+            if extractor not in valid_extractors:
+                raise ValueError(
+                    f"extractor_params contains unknown extractor '{extractor}'"
+                )
+            if "sample_rate" in params:
+                sr = params["sample_rate"]
+                if not isinstance(sr, int) or isinstance(sr, bool) or sr <= 0:
+                    raise ValueError(
+                        f"extractor_params['{extractor}']['sample_rate'] must be a "
+                        f"positive int, got {sr!r}"
+                    )
 
         if not self.window_lengths or any(wl <= 0 for wl in self.window_lengths):
             raise ValueError("window_lengths must be non-empty and all values > 0")

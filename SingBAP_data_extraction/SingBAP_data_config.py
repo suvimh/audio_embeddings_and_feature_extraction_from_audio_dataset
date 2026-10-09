@@ -88,4 +88,5 @@ def singBAP_dataset_config(
         frame_duration=frame_duration,
         sample_rate=sample_rate,
         overlap_percentage=overlap_percentage,
+        enable_silence_trimming=True,
     )

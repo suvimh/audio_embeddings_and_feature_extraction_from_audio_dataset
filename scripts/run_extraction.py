@@ -197,14 +197,40 @@ def run_extraction(
                     dataset_name=dataset_config.name,
                 )
 
-                # Instantiate extractor
+                # Instantiate extractor with the effective sample rate: a
+                # per-extractor 'sample_rate' in extractor_params overrides
+                # the dataset config's sample_rate (LAION-CLAP needs 48 kHz).
                 extractor_params = extraction_config.extractor_params.get(
                     extractor_name, {}
                 )
+                effective_sr = int(
+                    extractor_params.get(
+                        "sample_rate", dataset_config_for_window.sample_rate
+                    )
+                )
+                if effective_sr <= 0:
+                    raise ValueError(
+                        f"Effective sample rate for '{extractor_name}' must be > 0, "
+                        f"got {effective_sr}"
+                    )
                 extractor_config = make_extractor(
                     name=extractor_name,
-                    sample_rate=dataset_config.sample_rate,
+                    sample_rate=effective_sr,
                     extractor_params=extractor_params,
+                )
+
+                # Frame the audio at the same rate the extractor expects
+                dataset_config_for_extractor = replace(
+                    dataset_config_for_window, sample_rate=effective_sr
+                )
+
+                logger.log_info(
+                    f"Extractor '{extractor_name}' will use sample_rate={effective_sr} Hz "
+                    f"at {window_length}s",
+                    stage="extractor_initialization",
+                    extractor=extractor_name,
+                    window_length=window_length,
+                    sample_rate=effective_sr,
                 )
 
                 # Run extraction
@@ -212,7 +238,7 @@ def run_extraction(
 
                 try:
                     df = extract_dataset_features(
-                        dataset_config=dataset_config_for_window,
+                        dataset_config=dataset_config_for_extractor,
                         extractor_config=extractor_config,
                         output_dir=output_dir,
                         checkpoint_dir=output_dir,
@@ -238,9 +264,9 @@ def run_extraction(
                         duration_sec=extraction_time,
                     )
 
-                    # Track output file
+                    # Track output file (matches the {dataset}_{extractor}_{window}s.parquet naming)
                     output_filename = (
-                        f"{extractor_name}_window_{window_length}s.parquet"
+                        f"{dataset_config.name}_{extractor_config.name}_{window_length}s.parquet"
                     )
                     output_file = output_dir / output_filename
                     output_files.append(str(output_file))

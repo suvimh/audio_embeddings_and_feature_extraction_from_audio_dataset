@@ -53,6 +53,19 @@ def make_extractor(
         version = extractor_params.get("version", "2023")
         return make_ms_clap_extractor(version=version, sample_rate=sample_rate)
 
+    elif name_lower == "laion-clap":
+        from scripts.dl_embeddings.extract_laion_clap_embeddings import (
+            make_laion_clap_extractor,
+        )
+
+        model_name = extractor_params.get("model_name", "laion/clap-htsat-fused")
+        device = extractor_params.get("device", None)
+        return make_laion_clap_extractor(
+            model_name=model_name,
+            sample_rate=sample_rate,
+            device=device,
+        )
+
     elif name_lower == "whisper":
         from scripts.dl_embeddings.extract_whisper_embeddings import (
             make_whisper_extractor,
@@ -87,7 +100,7 @@ def make_extractor(
         return make_mfcc_extractor(n_mfcc=n_mfcc, sample_rate=sample_rate)
 
     else:
-        valid_names = {"vggish", "ms-clap", "whisper", "opensmile"}
+        valid_names = {"vggish", "ms-clap", "laion-clap", "whisper", "opensmile", "mfcc"}
         raise ValueError(f"Unknown extractor '{name}'. Valid names: {valid_names}")
 
 
@@ -103,15 +116,39 @@ EXTRACTOR_METADATA = {
     },
     "ms-clap": {
         "description": "MS-CLAP audio-text embeddings (PyTorch)",
-        "embedding_dims": {"2023": 512, "2024": 1024},
+        "embedding_dims": {"2022": 1024, "2023": 1024},
         "default_params": {"version": "2023"},
         "params": {
             "version": {
                 "type": "str",
-                "choices": ["2023", "2024"],
+                "choices": ["2022", "2023"],
                 "default": "2023",
                 "description": "CLAP model version",
             }
+        },
+    },
+    "laion-clap": {
+        "description": "LAION-CLAP audio-text embeddings (HuggingFace Transformers)",
+        "embedding_dims": {"laion/clap-htsat-fused": 512},
+        "default_params": {"model_name": "laion/clap-htsat-fused"},
+        "params": {
+            "model_name": {
+                "type": "str",
+                "choices": ["laion/clap-htsat-fused"],
+                "default": "laion/clap-htsat-fused",
+                "description": "HuggingFace LAION-CLAP model identifier",
+            },
+            "sample_rate": {
+                "type": "int",
+                "default": 48000,
+                "description": "Sample rate for audio (LAION-CLAP requires 48000)",
+            },
+            "device": {
+                "type": "str or None",
+                "choices": ["cuda", "mps", "cpu", None],
+                "default": None,
+                "description": "Force device (None = auto-detect)",
+            },
         },
     },
     "whisper": {

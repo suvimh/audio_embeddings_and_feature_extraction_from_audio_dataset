@@ -117,15 +117,19 @@ def load_and_frame_audio(
     overlap_percentage: float,
     target_sr: int = 16000,
     min_frame_samples: Optional[int] = None,
-    enable_silence_trimming: bool = True,
+    enable_silence_trimming: bool = False,
     silence_threshold_db: float = -40.0,
     silence_min_duration_ms: float = 500.0,
     normalization_mode: str = "none",
-) -> Optional[list[np.ndarray]]:
+    short_audio_handling: str = "tile",
+    pad_tail_window: bool = False,
+) -> Optional[list[tuple[np.ndarray, bool]]]:
     """
-    Load an audio file, resample, trim silence, normalize, and split into overlapping frames.
-    Frames shorter than min_frame_samples are tiled to meet the minimum length.
-    Returns a list of float32 numpy arrays, one per frame. Returns None on error.
+    Load an audio file, resample, optionally trim silence, normalize, and split
+    into frames. Returns a list of (frame, padded) tuples, one per frame, where
+    `frame` is a float32 numpy array of length frame_duration * target_sr and
+    `padded` is True iff the frame contains zero-padding (a short file zero-padded
+    to a full window, or a zero-padded tail window). Returns None on error.
 
     Parameters
     ----------
@@ -138,7 +142,7 @@ def load_and_frame_audio(
     target_sr : int
         Target sample rate.
     min_frame_samples : int | None
-        Minimum samples required per frame (pads with tiling if smaller).
+        Minimum samples required per frame (tiled to length if smaller).
     enable_silence_trimming : bool
         If True, trim silence from audio.
     silence_threshold_db : float
@@ -147,6 +151,12 @@ def load_and_frame_audio(
         Minimum silence duration in ms.
     normalization_mode : str
         Normalization mode: 'peak', 'rms', 'lufs', or 'none'.
+    short_audio_handling : str
+        How to handle audio shorter than one frame: 'tile' (repeat the audio
+        to fill the frame) or 'pad' (zero-pad to the frame length).
+    pad_tail_window : bool
+        If True, keep a trailing partial window by zero-padding it into one
+        extra full frame (marked padded=True) instead of dropping it.
     """
     try:
         audio, sr = librosa.load(str(audio_file), sr=None)
@@ -165,24 +175,47 @@ def load_and_frame_audio(
 
         audio = normalize_audio(audio, mode=normalization_mode)
 
+        if len(audio) == 0:
+            return None
+
         frame_len = int(frame_duration * sr)
         hop_length = int(frame_len * (1 - overlap_percentage))
+        hop_length = max(1, hop_length)
+
+        frames: list[tuple[np.ndarray, bool]] = []
 
         if len(audio) < frame_len:
-            repeat_factor = int(np.ceil(frame_len / len(audio)))
-            audio = np.tile(audio, repeat_factor)[:frame_len]
+            # Short file: either zero-pad to a full window (padded=True) or
+            # tile the audio to fill the window (padded=False).
+            if short_audio_handling == "pad":
+                padded = np.zeros(frame_len, dtype=np.float32)
+                padded[: len(audio)] = audio
+                frames.append((padded, True))
+            else:  # 'tile'
+                repeat_factor = int(np.ceil(frame_len / len(audio)))
+                frames.append((np.tile(audio, repeat_factor)[:frame_len], False))
+        else:
+            frames_matrix = librosa.util.frame(
+                audio, frame_length=frame_len, hop_length=hop_length
+            )
+            frames = [
+                (np.ascontiguousarray(frame, dtype=np.float32), False)
+                for frame in frames_matrix.T
+            ]
 
-        frames_matrix = librosa.util.frame(
-            audio, frame_length=frame_len, hop_length=hop_length
-        )
+            if pad_tail_window:
+                covered_end = (len(frames) - 1) * hop_length + frame_len
+                if covered_end < len(audio):
+                    tail = np.zeros(frame_len, dtype=np.float32)
+                    tail[: len(audio) - covered_end] = audio[covered_end:]
+                    frames.append((tail, True))
 
         result = []
-        for frame in frames_matrix.T:
-            frame = np.ascontiguousarray(frame, dtype=np.float32)
+        for frame, padded in frames:
             if min_frame_samples and len(frame) < min_frame_samples:
                 repeat_factor = int(np.ceil(min_frame_samples / len(frame)))
                 frame = np.tile(frame, repeat_factor)[:min_frame_samples]
-            result.append(frame)
+            result.append((frame, padded))
 
         return result if result else None
 
@@ -314,6 +347,7 @@ def _append_rows_to_hdf5(
       /metadata/filepath   : variable-length string
       /metadata/frame_index: int32 array
       /metadata/extractor  : variable-length string
+      /metadata/padded     : uint8 array (1 = window contains zero-padding)
     """
     if not rows:
         return
@@ -371,6 +405,20 @@ def _append_rows_to_hdf5(
             ds.resize(old_len + n_new, axis=0)
             ds[old_len:] = frame_indices
 
+        # padded flag (uint8; 1 = window contains zero-padding)
+        padded_flags = np.array(
+            [bool(r.get("padded", False)) for r in rows], dtype=np.uint8
+        )
+        if "padded" not in f["metadata"]:
+            f["metadata"].create_dataset(
+                "padded", data=padded_flags, maxshape=(None,), chunks=(256,)
+            )
+        else:
+            ds = f["metadata"]["padded"]
+            old_len = ds.shape[0]
+            ds.resize(old_len + n_new, axis=0)
+            ds[old_len:] = padded_flags
+
 
 def _hdf5_to_parquet(hdf5_file: Path, parquet_file: Path) -> pd.DataFrame:
     """
@@ -386,6 +434,8 @@ def _hdf5_to_parquet(hdf5_file: Path, parquet_file: Path) -> pd.DataFrame:
                 meta[col] = [
                     v.decode() if isinstance(v, bytes) else str(v) for v in raw
                 ]
+            elif col == "padded":  # uint8 flag -> bool
+                meta[col] = raw.astype(bool).tolist()
             else:
                 meta[col] = raw.tolist()
 
@@ -442,7 +492,15 @@ def save_metadata(
     label_cols = [
         c
         for c in df.columns
-        if c not in ("embedding", "extractor", "frame_index", "filepath", "filename")
+        if c
+        not in (
+            "embedding",
+            "extractor",
+            "frame_index",
+            "filepath",
+            "filename",
+            "padded",
+        )
     ]
     meta = {
         "dataset": dataset_config.name,
@@ -451,6 +509,15 @@ def save_metadata(
         "frame_duration": dataset_config.frame_duration,
         "overlap_percentage": dataset_config.overlap_percentage,
         "sample_rate": dataset_config.sample_rate,
+        "enable_silence_trimming": dataset_config.enable_silence_trimming,
+        "silence_threshold_db": dataset_config.silence_threshold_db,
+        "silence_min_duration_ms": dataset_config.silence_min_duration_ms,
+        "normalization_mode": dataset_config.normalization_mode,
+        "short_audio_handling": dataset_config.short_audio_handling,
+        "pad_tail_window": dataset_config.pad_tail_window,
+        "zero_padded_frames": int(df["padded"].sum())
+        if "padded" in df.columns
+        else 0,
         "file_suffix_filter": dataset_config.file_suffix_filter,
         "total_frames": len(df),
         "total_files": df["filepath"].nunique(),
@@ -564,6 +631,8 @@ def extract_dataset_features(
                     silence_threshold_db=dataset_config.silence_threshold_db,
                     silence_min_duration_ms=dataset_config.silence_min_duration_ms,
                     normalization_mode=dataset_config.normalization_mode,
+                    short_audio_handling=dataset_config.short_audio_handling,
+                    pad_tail_window=dataset_config.pad_tail_window,
                 )
 
                 if frames is None:
@@ -581,7 +650,7 @@ def extract_dataset_features(
                     continue
 
                 file_frames_extracted = 0
-                for frame_idx, frame in enumerate(frames):
+                for frame_idx, (frame, padded) in enumerate(frames):
                     try:
                         embedding = extractor_config.extract_fn(frame)
                         if embedding is None:
@@ -603,6 +672,7 @@ def extract_dataset_features(
                                 "frame_index": frame_idx,
                                 "embedding": embedding,
                                 "extractor": extractor_config.name,
+                                "padded": padded,
                             }
                         )
                         file_frames_extracted += 1

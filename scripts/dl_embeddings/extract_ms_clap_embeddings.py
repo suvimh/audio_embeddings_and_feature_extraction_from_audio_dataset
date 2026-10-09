@@ -1,17 +1,22 @@
 """
 MS-CLAP Feature Extractor
-======================
+=========================
 Uses MS-CLAP audio encoder to extract embeddings.
 Plugs into the same DatasetConfig / utils pipeline as VGGish and Whisper.
 
 Embedding dim:
-  CLAP 2023 : 512
-  CLAP 2024 : 1024
+  CLAP 2022 : 1024
+  CLAP 2023 : 1024
 
 Note: msclap requires file paths rather than raw arrays, so each frame is
 written to a temp file, embedded, then deleted. This is unavoidable with
 the msclap API but is kept as lightweight as possible (one tmp file reused
 per extractor instance).
+
+Note: msclap tiles/pads every input window internally to the model's fixed
+training duration (7 s for the 2023 model, 5 s for 2022) before embedding,
+so the returned embedding already covers a single window. The internal
+resample rate is 44.1 kHz regardless of the sample rate used for framing.
 """
 
 import os
@@ -29,8 +34,8 @@ from scripts.utils import FeatureExtractorConfig, extract_dataset_features
 # ---------------------------------------------------------------------------
 
 MS_CLAP_EMBEDDING_DIMS = {
-    "2023": 512,
-    "2024": 1024,
+    "2022": 1024,
+    "2023": 1024,
 }
 
 
@@ -48,15 +53,20 @@ def make_ms_clap_extractor(
 
     Parameters
     ----------
-    version     : CLAP model version — '2023' or '2024'
+    version     : CLAP model version — '2022' or '2023'
     sample_rate : sample rate used when writing temp wav files (must match
                   what load_and_frame_audio resamples to — default 16000)
     """
+    if version not in MS_CLAP_EMBEDDING_DIMS:
+        raise ValueError(
+            f"Unsupported MS-CLAP version '{version}'. "
+            f"Valid versions: {sorted(MS_CLAP_EMBEDDING_DIMS)}"
+        )
     use_cuda = torch.cuda.is_available()
     print(f"[INFO] Loading CLAP {version} (cuda={use_cuda})")
     clap_model = CLAP(version=version, use_cuda=use_cuda)
 
-    embedding_dim = MS_CLAP_EMBEDDING_DIMS.get(version, 512)
+    embedding_dim = MS_CLAP_EMBEDDING_DIMS.get(version, 1024)
 
     # One persistent temp file, reused for every frame to avoid repeated
     # file creation overhead
@@ -88,7 +98,7 @@ def make_ms_clap_extractor(
     atexit.register(lambda: os.unlink(tmp_path) if os.path.exists(tmp_path) else None)
 
     return FeatureExtractorConfig(
-        name=f"clap-{version}",  # e.g. vte_dataset_clap-2023_3.0s.parquet
+        name=f"ms-clap-{version}",  # e.g. vte_dataset_ms-clap-2023_3.0s.parquet
         extract_fn=extract,
         embedding_dim=embedding_dim,
         min_input_samples=None,  # CLAP handles short audio internally

@@ -21,10 +21,15 @@ simple_dataset = DatasetConfig(
     sample_rate=16000,
     frame_duration=3.0,
     overlap_percentage=0.25,
-    enable_silence_trimming=True,
+    enable_silence_trimming=False,
     silence_threshold_db=-40.0,
-    silence_min_duration_ms=500.0,
-    normalization_mode="peak",
+    silence_min_duration_ms=250.0,
+    normalization_mode="none",
+    # Short files (< frame_duration) are zero-padded to a full window and
+    # flagged in the 'padded' output column
+    short_audio_handling="pad",
+    # Keep a trailing partial window as one extra zero-padded frame
+    pad_tail_window=True,
 )
 
 

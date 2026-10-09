@@ -21,11 +21,14 @@ vggish_only = ExtractionConfig(
 
 # Example 2: Multi-window extraction with multiple embeddings
 multi_window_multi_embeddings = ExtractionConfig(
-    extractors=["vggish", "ms-clap", "whisper"],
+    extractors=["vggish", "ms-clap", "laion-clap", "whisper"],
     output_dir="/path/to/output/multi_embeddings",
     window_lengths=[3.0, 5.0],  # Will extract for both 3s and 5s frames
     extractor_params={
-        "ms-clap": {"version": "2024"},  # Use CLAP 2024 model (1024-dim)
+        "ms-clap": {"version": "2023"},  # 1024-dim
+        # LAION-CLAP is trained at 48 kHz, so it needs its own sample rate
+        # (all other extractors use the dataset config's sample rate)
+        "laion-clap": {"sample_rate": 48000},
         "whisper": {"model_name": "openai/whisper-base"},  # Specify model variant
     },
     batch_size="auto",
@@ -71,11 +74,12 @@ opensmile_only = ExtractionConfig(
 
 # Example 5: All extractors with comprehensive parameter control
 comprehensive_extraction = ExtractionConfig(
-    extractors=["vggish", "ms-clap", "whisper", "opensmile"],
+    extractors=["vggish", "ms-clap", "laion-clap", "whisper", "opensmile", "mfcc"],
     output_dir="/path/to/output/comprehensive",
     window_lengths=[3.0, 5.0, 7.0],
     extractor_params={
-        "ms-clap": {"version": "2024"},
+        "ms-clap": {"version": "2023"},
+        "laion-clap": {"sample_rate": 48000},
         "whisper": {"model_name": "openai/whisper-small"},
         "opensmile": {"feature_set": "ComParE_2016"},
     },

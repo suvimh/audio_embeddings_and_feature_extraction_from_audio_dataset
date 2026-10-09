@@ -1,6 +1,14 @@
 # ---------------------------------------------------------------------------
-# VocalSet Dataset Config
+# VocalSet Dataset Config — 3s non-overlapping rerun
 # ---------------------------------------------------------------------------
+# Same folder layout as vocalSet_data_config.py, but with the settings used
+# for the reviewer-driven rerun:
+#   - non-overlapping 3-second windows (overlap_percentage=0.0)
+#   - no silence trimming (embeddings must be directly comparable to the
+#     fine-tuning windows, which are cut from the raw recordings)
+#   - short files (< 3s) zero-padded to a full window (short_audio_handling)
+#   - trailing partial windows zero-padded into one extra frame
+#     (pad_tail_window)
 
 from scripts.config.dataset_config import DatasetConfig
 
@@ -11,7 +19,7 @@ def vocalset_dataset_config(
     root_dir: str = DATA_INPUT_DIR,
     frame_duration: float = 3.0,
     sample_rate: int = 16000,
-    overlap_percentage: float = 0.25,
+    overlap_percentage: float = 0.0,
 ) -> DatasetConfig:
     """
     VocalSet dataset.
@@ -61,10 +69,9 @@ def vocalset_dataset_config(
         frame_duration=frame_duration,
         sample_rate=sample_rate,
         overlap_percentage=overlap_percentage,
-        # Silence trimming stays ON for this config: the existing 3sec/
-        # embeddings were extracted with the previous (True) default, and the
-        # 3-second non-overlapping rerun keeps it OFF in the new config file.
-        enable_silence_trimming=True,
+        enable_silence_trimming=False,
+        short_audio_handling="pad",
+        pad_tail_window=True,
     )
 
 

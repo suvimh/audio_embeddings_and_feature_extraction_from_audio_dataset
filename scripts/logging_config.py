@@ -31,6 +31,8 @@ class JSONLineFormatter(logging.Formatter):
             log_dict["extractor"] = record.extractor
         if hasattr(record, "window_length"):
             log_dict["window_length"] = record.window_length
+        if hasattr(record, "sample_rate"):
+            log_dict["sample_rate"] = record.sample_rate
         if hasattr(record, "file_path"):
             log_dict["file_path"] = record.file_path
         if hasattr(record, "files_processed"):
@@ -41,6 +43,8 @@ class JSONLineFormatter(logging.Formatter):
             log_dict["errors"] = record.errors
         if hasattr(record, "warnings"):
             log_dict["warnings"] = record.warnings
+        if hasattr(record, "duration_sec"):
+            log_dict["duration_sec"] = record.duration_sec
         if hasattr(record, "resource_cpu_percent"):
             log_dict["resource_cpu_percent"] = record.resource_cpu_percent
         if hasattr(record, "resource_ram_used_gb"):
@@ -139,6 +143,7 @@ class ExtractionLogger:
         record.frames_processed = frames_processed
         record.errors = errors
         record.warnings = warnings
+        record.duration_sec = duration_sec
         self.logger.handle(record)
 
     def log_file_processed(

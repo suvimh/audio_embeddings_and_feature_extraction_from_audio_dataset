@@ -4,7 +4,7 @@ A modular, production-ready Python framework for extracting deep learning embedd
 
 **Features:**
 
-- 🎯 **Multiple Extractors**: VGGish (128-dim), CLAP (512/1024-dim), Whisper (384-1280-dim), OpenSMILE (62-6373-dim)
+- 🎯 **Multiple Extractors**: VGGish (128-dim), MS-CLAP (1024-dim), LAION-CLAP (512-dim), Whisper (384–1280-dim), OpenSMILE (62–6373-dim), MFCC (13-dim)
 - 📊 **Multi-Window Extraction**: Process multiple frame durations in a single run
 - 🎛️ **Flexible Audio Processing**: Configurable silence trimming, normalization (peak/RMS/LUFS)
 - 💾 **Scalable I/O**: HDF5 accumulation → Parquet output with crash recovery
@@ -48,9 +48,9 @@ dataset = DatasetConfig(
     sample_rate=16000,
     frame_duration=3.0,
     overlap_percentage=0.25,
-    enable_silence_trimming=True,
+    enable_silence_trimming=False,
     silence_threshold_db=-40.0,
-    normalization_mode="peak",
+    normalization_mode="none",
 )
 ```
 
@@ -110,14 +110,18 @@ tail -f extraction_TIMESTAMP.jsonl
 
 ```
 /path/to/output/
-  vggish_window_3s.parquet
-  vggish_window_5s.parquet
-  clap_window_3s.parquet
-  clap_window_5s.parquet
-  whisper_window_3s.parquet
-  whisper_window_5s.parquet
+  my_audio_dataset_vggish_3.0s.parquet
+  my_audio_dataset_vggish_5.0s.parquet
+  my_audio_dataset_ms-clap-2023_3.0s.parquet
+  my_audio_dataset_ms-clap-2023_5.0s.parquet
+  my_audio_dataset_whisper_whisper-base_3.0s.parquet
+  my_audio_dataset_whisper_whisper-base_5.0s.parquet
   extraction_TIMESTAMP.jsonl
 ```
+
+Files are named `{dataset_name}_{extractor_name}_{frame_duration}s.parquet`,
+with a matching `.json` sidecar containing the extraction settings
+(including the effective sample rate and the `padded`/zero-padding flags).
 
 ---
 
@@ -138,10 +142,12 @@ Define your dataset structure and audio preprocessing parameters in `scripts/con
 | `sample_rate`             | int       | 16000    | Target sample rate (Hz)                                      |
 | `frame_duration`          | float     | 3.0      | Frame duration (seconds)                                     |
 | `overlap_percentage`      | float     | 0.25     | Overlap between frames (0.0–1.0)                             |
-| `enable_silence_trimming` | bool      | True     | Trim silence from audio                                      |
+| `enable_silence_trimming` | bool      | False    | Trim silence from audio                                      |
 | `silence_threshold_db`    | float     | -40.0    | Silence threshold (dB, relative to RMS)                      |
-| `silence_min_duration_ms` | float     | 500.0    | Minimum silence gap to trim (ms)                             |
-| `normalization_mode`      | str       | "peak"   | Audio normalization: "peak", "rms", "lufs", or "none"        |
+| `silence_min_duration_ms` | float     | 250.0    | Minimum silence gap to trim (ms)                             |
+| `normalization_mode`      | str       | "none"   | Audio normalization: "peak", "rms", "lufs", or "none"        |
+| `short_audio_handling`    | str       | "tile"   | Files shorter than one frame: "tile" (repeat) or "pad" (zero-pad, flagged in `padded` column) |
+| `pad_tail_window`         | bool      | False    | Keep a trailing partial window as one extra zero-padded frame ("padded" column) |
 | `file_suffix_filter`      | str/None  | None     | Only process files with specific suffix (e.g., "-mic-audio") |
 | `audio_extensions`        | list[str] | [".wav"] | Audio file extensions to process                             |
 
@@ -192,7 +198,11 @@ Define which embeddings/features to extract and output settings in `scripts/conf
 ```python
 extractor_params = {
     "ms-clap": {
-        "version": "2023",  # or "2024" (1024-dim)
+        "version": "2023",  # or "2022" (both 1024-dim)
+    },
+    "laion-clap": {
+        "sample_rate": 48000,  # LAION-CLAP requires 48 kHz (overrides dataset config)
+        "model_name": "laion/clap-htsat-fused",  # optional
     },
     "whisper": {
         "model_name": "openai/whisper-base",  # Options: tiny, base, small, medium, large
@@ -205,18 +215,24 @@ extractor_params = {
 }
 ```
 
+The special `sample_rate` key sets a per-extractor sample rate — both the audio
+framing and the extractor use it, overriding the dataset config's `sample_rate`.
+This is how LAION-CLAP (trained at 48 kHz) runs alongside 16 kHz extractors.
+
 ### 3. Available Extractors
 
 ```bash
 python -m scripts list-extractors
 ```
 
-| Extractor     | Type              | Dim      | Device  | Description                                     |
-| ------------- | ----------------- | -------- | ------- | ----------------------------------------------- |
-| **VGGish**    | DL Embedding      | 128      | GPU/CPU | Audio tagging from Google (TensorFlow)          |
-| **CLAP**      | DL Embedding      | 512/1024 | GPU     | Audio-text embeddings (MS Research)             |
-| **Whisper**   | DL Embedding      | 384–1280 | GPU     | Speech encoder (OpenAI)                         |
-| **OpenSMILE** | Acoustic Features | 62–6373  | CPU     | Traditional acoustic features (paralinguistics) |
+| Extractor     | Type              | Dim      | Device  | Description                                             |
+| ------------- | ----------------- | -------- | ------- | ------------------------------------------------------- |
+| **VGGish**    | DL Embedding      | 128      | GPU/CPU | Audio tagging from Google (TensorFlow)                  |
+| **MS-CLAP**   | DL Embedding      | 1024     | GPU     | Audio-text embeddings (Microsoft Research, via msclap)  |
+| **LAION-CLAP**| DL Embedding      | 512      | GPU     | Audio-text embeddings (LAION, via Transformers, 48 kHz) |
+| **Whisper**   | DL Embedding      | 384–1280 | GPU     | Speech encoder (OpenAI)                                 |
+| **OpenSMILE** | Acoustic Features | 62–6373  | CPU     | Traditional acoustic features (paralinguistics)         |
+| **MFCC**      | Acoustic Features | 13       | CPU     | Classic MFCC feature vectors                            |
 
 ### 4a. Command-Line Interface
 
@@ -365,7 +381,7 @@ for f in output_files:
     print(f"  - {f.name}")
 
 # Load a specific embedding
-df_vggish = pd.read_parquet(output_dir / "vggish_window_3s.parquet")
+df_vggish = pd.read_parquet(output_dir / "my_audio_dataset_vggish_3.0s.parquet")
 
 print(f"\nVGGish embeddings shape: {df_vggish.shape}")
 print(f"Columns: {list(df_vggish.columns)}")
@@ -484,7 +500,7 @@ run_extraction(
 )
 
 # Load results
-df = pd.read_parquet(Path(extraction.output_dir) / "vggish_window_3s.parquet")
+df = pd.read_parquet(Path(extraction.output_dir) / "my_audio_dataset_vggish_3.0s.parquet")
 print(f"Processed {len(df)} frames")
 print(f"Columns: {list(df.columns)}")
 ```
@@ -498,7 +514,7 @@ All embeddings and features are saved as **Apache Parquet** with metadata:
 import pandas as pd
 from scripts.utils import load_parquet
 
-df = load_parquet("output/vggish_window_3s.parquet")
+df = load_parquet("output/my_audio_dataset_vggish_3.0s.parquet")
 
 print(df.columns)
 # Index(['speaker', 'condition', 'filename', 'filepath', 'frame_index',
@@ -636,7 +652,8 @@ scripts/
 │   └── extraction_config.py        # ExtractionConfig + YAML serialization
 ├── dl_embeddings/
 │   ├── extract_vggish_embeddings.py
-│   ├── extract_clap_embeddings.py
+│   ├── extract_ms_clap_embeddings.py
+│   ├── extract_laion_clap_embeddings.py
 │   ├── extract_whisper_embeddings.py
 │   └── ...
 ├── feature_sets/
@@ -669,7 +686,7 @@ dataset_config.py + extraction_config.py
            ↓
     HDF5 → Parquet conversion
            ↓
-    output/{extractor}_window_{duration}s.parquet
+    output/{dataset}_{extractor}_{duration}s.parquet + .json sidecar
 ```
 
 ---

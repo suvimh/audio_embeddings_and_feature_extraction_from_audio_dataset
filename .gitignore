@@ -11,11 +11,7 @@ dist/
 *.swo
 
 .DS_Store
-<<<<<<< Updated upstream
-=======
-
 TUNI_emotion_dataset_og/
 */feature_correlations/
 */feature_importance/
 */singer_ids.txt
->>>>>>> Stashed changes

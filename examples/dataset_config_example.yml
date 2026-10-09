@@ -11,7 +11,9 @@ participant_level: 0
 sample_rate: 16000
 frame_duration: 3.0
 overlap_percentage: 0.25
-enable_silence_trimming: true
+enable_silence_trimming: false
 silence_threshold_db: -40.0
-silence_min_duration_ms: 500.0
-normalization_mode: "peak"
+silence_min_duration_ms: 250.0
+normalization_mode: "none"
+short_audio_handling: "pad"
+pad_tail_window: true

@@ -5,7 +5,8 @@
 
 extractors:
   - vggish
-  - clap
+  - ms-clap
+  - laion-clap
   - whisper
 
 output_dir: "/path/to/output/multi_embeddings"
@@ -15,8 +16,10 @@ window_lengths:
   - 5.0
 
 extractor_params:
-  clap:
-    version: "2024"
+  ms-clap:
+    version: "2023"
+  laion-clap:
+    sample_rate: 48000
   whisper:
     model_name: "openai/whisper-base"
 
